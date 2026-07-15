@@ -21,6 +21,11 @@ export default function CreateGroup() {
       setError("Group name is required.");
       return;
     }
+
+    if (name.trim().length < 3) {
+      setError("Group name must be at least 3 characters.");
+      return;
+    }
     setBusy(true);
     try {
       const res = await client.post("/groups", { name, description });
