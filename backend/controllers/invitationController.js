@@ -1,7 +1,9 @@
+```js
 const Invitation = require("../models/Invitation");
 const Membership = require("../models/Membership");
-const User = require("../models/User");
+const Group = require("../models/Group");
 const asyncHandler = require("../utils/asyncHandler");
+const { sendInviteEmail } = require("../config/email");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -10,7 +12,6 @@ const inviteMember = asyncHandler(async (req, res) => {
   if (!email || !EMAIL_RE.test(email)) {
     return res.status(400).json({ error: "A valid email address is required." });
   }
-
   const normalizedEmail = email.toLowerCase().trim();
 
   const existingMember = await Membership.findOne({ groupId: req.groupId })
@@ -34,61 +35,57 @@ const inviteMember = asyncHandler(async (req, res) => {
     invitedBy: req.userId,
   });
 
-  res.status(201).json({ invitation });
+  const group = await Group.findById(req.groupId).select("name");
+  const emailResult = await sendInviteEmail({
+    to: normalizedEmail,
+    groupName: group?.name || "a CrewUp group",
+    inviterName: req.user.name,
+    token: invitation.token,
+  });
+  res.status(201).json({ invitation, emailSent: emailResult.sent });
+});
+
+const listPendingInvites = asyncHandler(async (req, res) => {
+  const invites = await Invitation.find({ groupId: req.groupId, status: "pending" }).sort({ createdAt: -1 });
+  res.json({ invites });
+});
+
+const listMyInvitations = asyncHandler(async (req, res) => {
+  const invites = await Invitation.find({ email: req.user.email.toLowerCase(), status: "pending" })
+    .populate("groupId", "name")
+    .populate("invitedBy", "name")
+    .sort({ createdAt: -1 });
+  res.json({ invites });
 });
 
 const acceptInvitation = asyncHandler(async (req, res) => {
   const { token } = req.params;
-
   const invitation = await Invitation.findOne({ token });
-
   if (!invitation) {
-    return res.status(404).json({ error: "Invitation not found." });
+    return res.status(404).json({ error: "This invitation link is invalid." });
   }
-
+  if (invitation.status === "accepted") {
+    return res.status(409).json({ error: "This invitation has already been accepted." });
+  }
   if (invitation.status !== "pending") {
-    return res.status(400).json({ error: "Invitation is no longer pending." });
+    return res.status(409).json({ error: `This invitation was ${invitation.status}.` });
   }
-
-  if (invitation.expiresAt && invitation.expiresAt.getTime() < Date.now()) {
+  if (invitation.isExpired()) {
     invitation.status = "expired";
     await invitation.save();
-    return res.status(400).json({ error: "Invitation has expired." });
+    return res.status(410).json({ error: "This invitation has expired." });
   }
-
-  const user = await User.findById(req.userId);
-
-  if (!user || user.email.toLowerCase() !== invitation.email.toLowerCase()) {
-    return res.status(403).json({ error: "This invitation does not belong to your account." });
+  if (invitation.email !== req.user.email.toLowerCase()) {
+    return res.status(403).json({ error: "This invitation was sent to a different email address." });
   }
-
-  const existingMembership = await Membership.findOne({
-    groupId: invitation.groupId,
-    userId: req.userId,
-  });
-
-  if (!existingMembership) {
-    await Membership.create({
-      groupId: invitation.groupId,
-      userId: req.userId,
-      roleInGroup: "member",
-    });
+  const alreadyMember = await Membership.findOne({ groupId: invitation.groupId, userId: req.userId });
+  if (!alreadyMember) {
+    await Membership.create({ groupId: invitation.groupId, userId: req.userId, roleInGroup: "member" });
   }
-
   invitation.status = "accepted";
   await invitation.save();
-
-  res.json({ message: "Invitation accepted successfully.", invitation });
+  res.json({ groupId: invitation.groupId, invitation });
 });
 
-//List pending invitations for a group
-const listPendingInvites = asyncHandler(async (req, res) => {
-  const invitations = await Invitation.find({
-    groupId: req.groupId,
-    status: "pending",
-  }).sort({ createdAt: -1 });
-
-  res.json({ invitations });
-});
-
-module.exports = { inviteMember, listPendingInvites, acceptInvitation };
+module.exports = { inviteMember, listPendingInvites, listMyInvitations, acceptInvitation };
+```
