@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const invitationRoutes = require('./routes/invitationRoutes');
 
 function createApp() {
   const app = express();
@@ -28,6 +29,8 @@ function createApp() {
       error: err.message || "Something went wrong.",
     });
   });
+
+  app.use('/api/groups/:groupId/invitations', invitationRoutes);
 
   return app;
 }
