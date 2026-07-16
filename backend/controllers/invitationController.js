@@ -1,5 +1,6 @@
 const Invitation = require("../models/Invitation");
 const Membership = require("../models/Membership");
+const User = require("../models/User");
 const asyncHandler = require("../utils/asyncHandler");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -36,4 +37,48 @@ const inviteMember = asyncHandler(async (req, res) => {
   res.status(201).json({ invitation });
 });
 
-module.exports = { inviteMember };
+const acceptInvitation = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+
+  const invitation = await Invitation.findOne({ token });
+
+  if (!invitation) {
+    return res.status(404).json({ error: "Invitation not found." });
+  }
+
+  if (invitation.status !== "pending") {
+    return res.status(400).json({ error: "Invitation is no longer pending." });
+  }
+
+  if (invitation.expiresAt && invitation.expiresAt.getTime() < Date.now()) {
+    invitation.status = "expired";
+    await invitation.save();
+    return res.status(400).json({ error: "Invitation has expired." });
+  }
+
+  const user = await User.findById(req.userId);
+
+  if (!user || user.email.toLowerCase() !== invitation.email.toLowerCase()) {
+    return res.status(403).json({ error: "This invitation does not belong to your account." });
+  }
+
+  const existingMembership = await Membership.findOne({
+    groupId: invitation.groupId,
+    userId: req.userId,
+  });
+
+  if (!existingMembership) {
+    await Membership.create({
+      groupId: invitation.groupId,
+      userId: req.userId,
+      roleInGroup: "member",
+    });
+  }
+
+  invitation.status = "accepted";
+  await invitation.save();
+
+  res.json({ message: "Invitation accepted successfully.", invitation });
+});
+
+module.exports = { inviteMember, acceptInvitation };
