@@ -81,4 +81,14 @@ const acceptInvitation = asyncHandler(async (req, res) => {
   res.json({ message: "Invitation accepted successfully.", invitation });
 });
 
-module.exports = { inviteMember, acceptInvitation };
+//List pending invitations for a group
+const listPendingInvites = asyncHandler(async (req, res) => {
+  const invitations = await Invitation.find({
+    groupId: req.groupId,
+    status: "pending",
+  }).sort({ createdAt: -1 });
+
+  res.json({ invitations });
+});
+
+module.exports = { inviteMember, listPendingInvites, acceptInvitation };
