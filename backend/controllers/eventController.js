@@ -1,4 +1,6 @@
 const Event = require("../models/Events");
+const Rsvp = require("../models/Rsvp");
+const Membership = require("../models/Membership");
 const asyncHandler = require("../utils/asynchHandler");
 
 const createEvent = asyncHandler(async (req, res) => {
@@ -31,6 +33,14 @@ const createEvent = asyncHandler(async (req, res) => {
     description: description || "",
     createdBy: req.userId,
   });
+
+  const members = await Membership.find({ groupId: req.groupId }).select("userId");
+  if (members.length > 0) {
+    await Rsvp.insertMany(
+      members.map((m) => ({ eventId: event._id, userId: m.userId, response: "no_response" })),
+      { ordered: false }
+    );
+  }
 
   res.status(201).json({ event });
 });
