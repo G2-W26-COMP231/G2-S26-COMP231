@@ -1,6 +1,7 @@
+```js
 const test = require("node:test");
 const assert = require("node:assert");
-const { createGroup } = require("../controllers/groupController");
+const { createGroup, getMyGroups } = require("../controllers/groupController");
 
 function mockRes() {
   const res = {};
@@ -33,3 +34,50 @@ test("createGroup rejects a name that's just whitespace", async () => {
   await createGroup(req, res, () => {});
   assert.equal(res.statusCode, 400);
 });
+
+test("getMyGroups lists groups the current user belongs to", async (t) => {
+  const Membership = require("../models/Membership");
+  const originalFind = Membership.find;
+
+  t.after(() => {
+    Membership.find = originalFind;
+  });
+
+  Membership.find = function (query) {
+    assert.deepEqual(query, { userId: "fake-user-id" });
+
+    return {
+      populate: async function (field) {
+        assert.equal(field, "groupId");
+
+        return [
+          {
+            roleInGroup: "organizer",
+            groupId: {
+              toObject: () => ({
+                _id: "fake-group-id",
+                name: "Test Group",
+              }),
+            },
+          },
+        ];
+      },
+    };
+  };
+
+  const req = { userId: "fake-user-id" };
+  const res = mockRes();
+
+  await getMyGroups(req, res, () => {});
+
+  assert.deepEqual(res.body, {
+    groups: [
+      {
+        _id: "fake-group-id",
+        name: "Test Group",
+        myRole: "organizer",
+      },
+    ],
+  });
+});
+```
