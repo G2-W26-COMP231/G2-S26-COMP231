@@ -18,11 +18,11 @@ export default function GroupWorkspace() {
   if (error) return <div className="content-area"><p className="error-text">{error}</p></div>;
   if (!data) return <div className="content-area muted">Loading...</div>;
 
-  const { group, summary } = data;
+  const { group, myRole, summary } = data;
 
   return (
     <div className="content-area">
-      <GroupTabs groupId={groupId} groupName={group.name} memberCount={summary.memberCount} myRole="organizer" />
+      <GroupTabs groupId={groupId} groupName={group.name} memberCount={summary.memberCount} myRole={myRole} />
 
       <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
         <Link to={`/groups/${groupId}/invite`}><button>Invite Member</button></Link>
