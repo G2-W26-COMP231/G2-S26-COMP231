@@ -36,6 +36,7 @@ const getGroupWorkspace = asyncHandler(async (req, res) => {
     Membership.countDocuments({ groupId: group._id }),                 
     Event.countDocuments({ groupId: group._id, startTime: { $gte: new Date() }, isCancelled: false }), 
     Message.find({ groupId: group._id, isRemoved: false }).sort({ sentAt: -1 }).limit(5).populate("senderId", "name"),
+    isOrganizer ? Expense.countDocuments({ groupId: group._id }) : Promise.resolve(undefined),
   ]); 
  
   res.json({                                                            
