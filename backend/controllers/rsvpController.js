@@ -23,6 +23,15 @@ const submitRsvp = asyncHandler(async (req, res) => {
     { new: true, upsert: true, setDefaultsOnInsert: true }
   );
 
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`group:${req.groupId}`).emit("rsvp:update", {
+      eventId,
+      userId: req.userId,
+      response: rsvp.response,
+    });
+  }
+
   res.json({ rsvp });
 });
 
