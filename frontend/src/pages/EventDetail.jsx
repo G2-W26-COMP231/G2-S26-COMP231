@@ -1,3 +1,5 @@
+// pages/EventDetail.jsx
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import client from "../api/client";
@@ -11,9 +13,9 @@ export default function EventDetail() {
   const [group, setGroup] = useState(null);
   const [event, setEvent] = useState(null);
   const [myRole, setMyRole] = useState(null);
+  const [myResponse, setMyResponse] = useState("no_response");
   const [rsvpData, setRsvpData] = useState(null);
   const [statusFilter, setStatusFilter] = useState("going");
-  const [myResponse, setMyResponse] = useState("no_response");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,45 +31,30 @@ export default function EventDetail() {
           .catch(() => {});
       }
     });
-  }, [groupId, eventId]);
-
-  const countFor = (status) => rsvpData?.rsvps.filter((r) => r.response === status).length || 0;
-
-  return (
-    <div className="content-area">
-      <GroupTabs groupId={groupId} groupName={group?.name || "..."} myRole={myRole} />
-
-    });
-
     client.get(`/groups/${groupId}/events`).then((res) => {
       const found = res.data.events.find((e) => e._id === eventId);
       if (found) setEvent(found);
     });
-
     client.get(`/groups/${groupId}/events/${eventId}/rsvp`).then((res) => {
       setMyResponse(res.data.rsvp.response);
-    }).catch(() => { });
+    }).catch(() => {});
   }, [groupId, eventId]);
 
   useEffect(() => {
     const socket = getSocket();
     socket.connect();
     socket.emit("group:join", groupId);
-
     function handleUpdate(payload) {
       if (payload.eventId !== eventId) return;
-
       setRsvpData((prev) => {
         if (!prev) return prev;
-
-        const rsvps = prev.rsvps.map((r) => r.userId?._id === payload.userId ? { ...r, response: payload.response } : r);
-
+        const rsvps = prev.rsvps.map((r) =>
+          r.userId?._id === payload.userId ? { ...r, response: payload.response } : r
+        );
         return { ...prev, rsvps };
       });
     }
-
     socket.on("rsvp:update", handleUpdate);
-
     return () => {
       socket.off("rsvp:update", handleUpdate);
       socket.emit("group:leave", groupId);
@@ -77,7 +64,6 @@ export default function EventDetail() {
   async function submitRsvp(response) {
     setBusy(true);
     setError("");
-
     try {
       const res = await client.post(`/groups/${groupId}/events/${eventId}/rsvp`, { response });
       setMyResponse(res.data.rsvp.response);
@@ -88,8 +74,13 @@ export default function EventDetail() {
     }
   }
 
+  const filteredRsvps = rsvpData?.rsvps.filter((r) => r.response === statusFilter) || [];
+  const countFor = (status) => rsvpData?.rsvps.filter((r) => r.response === status).length || 0;
+
   return (
     <div className="content-area">
+      <GroupTabs groupId={groupId} groupName={group?.name || "..."} myRole={myRole} />
+
       {event && (
         <>
           <h3 style={{ marginBottom: 4 }}>{event.title}</h3>
@@ -99,23 +90,6 @@ export default function EventDetail() {
         </>
       )}
 
-      {myRole === "organizer" && rsvpData && (
-        <div className="rsvp-status-tabs">
-          {["going", "maybe", "cant_make_it"].map((s) => (
-            <span
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              style={{ cursor: "pointer", opacity: statusFilter === s ? 1 : 0.45 }}
-              className={s}
-            >
-              {RESPONSE_LABELS[s]} ({countFor(s)})
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
       {myRole === "member" && (
         <>
           <p style={{ fontWeight: 700, color: "var(--brand)", marginTop: 20 }}>Your RSVP</p>
@@ -134,7 +108,6 @@ export default function EventDetail() {
             >
               Maybe
             </button>
-
             <button
               className={myResponse === "cant_make_it" ? "selected cant_make_it" : "secondary"}
               disabled={busy}
@@ -146,6 +119,33 @@ export default function EventDetail() {
           {error && <p className="error-text">{error}</p>}
         </>
       )}
+
+      {myRole === "organizer" && rsvpData && (
+        <>
+          <div className="rsvp-status-tabs">
+            {["going", "maybe", "cant_make_it"].map((s) => (
+              <span
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                style={{ cursor: "pointer", opacity: statusFilter === s ? 1 : 0.45 }}
+                className={s}
+              >
+                {RESPONSE_LABELS[s]} ({countFor(s)})
+              </span>
+            ))}
+          </div>
+          <div className="card">
+            {filteredRsvps.length === 0 && <div className="empty-state">No one yet.</div>}
+            {filteredRsvps.map((r) => (
+              <div className="list-row" key={r._id}>
+                <span>{r.userId?.name || "Unknown"}</span>
+                <span className={statusFilter}>{RESPONSE_LABELS[r.response]}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
-} 
+}
+
