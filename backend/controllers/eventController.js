@@ -45,4 +45,14 @@ const createEvent = asyncHandler(async (req, res) => {
   res.status(201).json({ event });
 });
 
-module.exports = { createEvent };
+const getEventRsvps = asyncHandler(async (req, res) => {
+  const { eventId } = req.params;
+  const event = await Event.findOne({ _id: eventId, groupId: req.groupId });
+  if (!event) {
+    return res.status(404).json({ error: "Event not found." });
+  }
+  const rsvps = await Rsvp.find({ eventId }).populate("userId", "name email");
+  res.json({ event, rsvps });
+});
+
+module.exports = { createEvent, getEventRsvps };
