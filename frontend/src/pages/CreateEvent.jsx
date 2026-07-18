@@ -19,11 +19,23 @@ const [title, setTitle] = useState("");
  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+
+    if (!title.trim() || !location.trim() || !date || !time) {
+      setError("Title, location, date, and time are required.");
+      return;
+    }
+    const startTime = new Date(`${date}T${time}`);
+    if (Number.isNaN(startTime.getTime())) {
+      setError("Please enter a valid date and time.");
+      return;
+    }
+    if (startTime.getTime() < Date.now()) {
+      setError("Event date cannot be in the past.");
+      return;
+    }
+
     setBusy(true);
-
     try {
-      const startTime = new Date(`${date}T${time}`);
-
       const res = await client.post(`/groups/${groupId}/events`, {
         title,
         location,
