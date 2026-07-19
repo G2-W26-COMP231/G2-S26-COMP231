@@ -55,4 +55,14 @@ const getEventRsvps = asyncHandler(async (req, res) => {
   res.json({ event, rsvps });
 });
 
-module.exports = { createEvent, getEventRsvps };
+const getUpcomingEvents = asyncHandler(async (req, res) => {
+  const events = await Event.find({
+    groupId: req.groupId,
+    isCancelled: false,
+    startTime: { $gte: new Date() },
+  }).sort({ startTime: 1 });
+
+  res.json({ events });
+});
+
+module.exports = { createEvent, getEventRsvps, getUpcomingEvents };

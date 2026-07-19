@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { createEvent } = require("../controllers/eventController");
+const { createEvent, getUpcomingEvents } = require("../controllers/eventController");
 
 function mockRes() {
   const res = {};
@@ -77,4 +77,35 @@ test("createEvent creates the event and an RSVP record for every member", async 
   assert.equal(insertedDocs.length, 2);
   assert.deepEqual(insertedDocs.map((d) => d.userId), ["u1", "u2"]);
   assert.ok(insertedDocs.every((d) => d.eventId === "e1" && d.response === "no_response"));
+});
+
+test("getUpcomingEvents returns future, non-cancelled events sorted by start time", async (t) => {
+  const Event = require("../models/Events");
+  const originalFind = Event.find;
+  t.after(() => { Event.find = originalFind; });
+
+  let capturedQuery = null;
+  let capturedSort = null;
+  const upcoming = [{ _id: "e1", title: "Soon" }, { _id: "e2", title: "Later" }];
+  Event.find = function (query) {
+    capturedQuery = query;
+    return { sort: async (sortSpec) => { capturedSort = sortSpec; return upcoming; } };
+  };
+
+  const req = { groupId: "g1" };
+  const res = mockRes();
+  let resolveDone;
+  const done = new Promise((resolve) => { resolveDone = resolve; });
+  const originalJson = res.json;
+  res.json = function (data) { originalJson.call(res, data); resolveDone(); return res; };
+
+  getUpcomingEvents(req, res, (err) => resolveDone(err));
+  const maybeError = await done;
+  if (maybeError) throw maybeError;
+
+  assert.equal(capturedQuery.groupId, "g1");
+  assert.equal(capturedQuery.isCancelled, false);
+  assert.ok(capturedQuery.startTime.$gte instanceof Date);
+  assert.deepEqual(capturedSort, { startTime: 1 });
+  assert.deepEqual(res.body.events, upcoming);
 });
