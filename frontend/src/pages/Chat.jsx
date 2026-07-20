@@ -1,17 +1,47 @@
 // pages/Chat.jsx
 
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import client from "../api/client"; 
+import { getSocket } from "../socket";
 import GroupTabs from "../components/GroupTabs";
 
 export default function Chat() {
   const { groupId } = useParams();
+  const [group, setGroup] = useState(null);
+  const [myRole, setMyRole] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const logRef = useRef(null);
+
+useEffect(() => {
+    client.get(`/groups/${groupId}`).then((res) => { setGroup(res.data.group); setMyRole(res.data.myRole); }).catch(() => {});
+   }, [groupId]); 
+
+useEffect(() => {
+  socket.connect();
+function handleNew(message) {
+  setMessages((prev) => {
+        if (prev.some((m) => m._id === message._id)) return prev;
+        return [...prev, message];
+      });
+    }
+   socket.on("message:new", handleNew);
+    return () => {
+      socket.off("message:new", handleNew);
+      socket.emit("group:leave", groupId);
+    };
+  }, [groupId]);
+
+useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [messages]);
 
   return (
     <div className="content-area">
       <GroupTabs groupId={groupId} groupName="..." myRole={null} />
 
       <div className="chat-log">
-        <div className="empty-state">No messages yet - say hi!</div>
+        {messages.length === 0 && <div className="empty-state">No messages yet - say hi!</div>} 
       </div>
 
       <form className="chat-form">
