@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Membership = require("../models/Membership");
+const { persistAndBroadcast } = require("../controllers/messageController");
 
 function initChatSocket(io) {
   io.use(async (socket, next) => {
@@ -28,8 +29,26 @@ function initChatSocket(io) {
     });
     socket.on("group:leave", (groupId) => { 
       socket.leave(`group:${groupId}`); 
-    }); 
     });
+    
+    socket.on("message:send", async ({ groupId, body }, ack) => {
+      try {
+        const membership = await Membership.findOne({ groupId, userId: socket.userId }); 
+        if (!membership) {       
+          return ack?.({ error: "You are not a member of this group." });
+        }
+        const message = await persistAndBroadcast({                       
+          groupId,
+          senderId: socket.userId,
+          body,
+          io,
+        });
+        ack?.({ ok: true, message });                                                 
+      } catch (err) {
+        ack?.({ error: err.message || "Could not send message." });
+      }
+    });
+});
 };
 
 module.exports = initChatSocket;
