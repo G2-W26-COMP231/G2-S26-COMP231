@@ -6,10 +6,19 @@ import client from "../api/client";
 import { getSocket } from "../socket";
 import GroupTabs from "../components/GroupTabs";
 
+function dayLabel(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+}
+
 export default function Chat() {
   const { groupId } = useParams();
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
+  const [group, setGroup] = useState(null);
+  const [myRole, setMyRole] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const logRef = useRef(null);
 
   function handleSend(e) {
     e.preventDefault();
@@ -22,10 +31,6 @@ export default function Chat() {
     });
     setDraft("");
   }
-  const [group, setGroup] = useState(null);
-  const [myRole, setMyRole] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const logRef = useRef(null);
 
 useEffect(() => {
     client.get(`/groups/${groupId}`).then((res) => { setGroup(res.data.group); setMyRole(res.data.myRole); }).catch(() => {});
@@ -59,12 +64,41 @@ useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [messages]);
 
+const groups = [];
+  let lastDay = null;
+  for (const m of messages) {
+    const day = dayLabel(m.sentAt);
+    if (day !== lastDay) {
+      groups.push({ type: "divider", label: day, key: `div-${m._id}` });
+      lastDay = day;
+    }
+    groups.push({ type: "message", data: m, key: m._id });
+  }
+
   return (
     <div className="content-area">
       <GroupTabs groupId={groupId} groupName="..." myRole={null} />
 
       <div className="chat-log">
         {messages.length === 0 && <div className="empty-state">No messages yet - say hi!</div>} 
+        {messages.length > 0 && (
+          <div className="chat-date-divider">Conversation started: {dayLabel(messages[0].sentAt)}</div>
+        )}
+        {groups.map((item) => {
+          if (item.type === "divider") {
+            return ( <div className="chat-date-divider" key={item.key}>{item.label}</div>
+            );
+        }
+          const m = item.data;
+      return (
+        <div className={`chat-row ${mine ? "mine" : ""}`} key={item.key}>
+          {!mine && <div className="chat-avatar">👤</div>}
+          <div className="chat-bubble-wrap">
+            <div className="chat-bubble">{m.content}</div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <form className="chat-form" onSubmit={handleSend}>
