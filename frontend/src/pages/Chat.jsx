@@ -17,7 +17,7 @@ export default function Chat() {
     if (!body) return;
     setError("");
     const socket = getSocket();
-    socket.emit("message:send", { groupId, body }, (ack) => {
+    socket.emit("message:send", { groupId, body, clientSentAt: Date.now() }, (ack) => {
       if (ack?.error) setError(ack.error);
     });
     setDraft("");
@@ -32,8 +32,17 @@ useEffect(() => {
    }, [groupId]); 
 
 useEffect(() => {
+  const socket = getSocket();
   socket.connect();
 function handleNew(message) {
+  if (message.clientSentAt) {
+    const deliveryMs = Date.now() - message.clientSentAt;
+    console.log(`Message delivery time: ${deliveryMs}ms`);
+    if (deliveryMs > 2000) {
+      console.warn("NFR5 warning: message delivery took longer than 2 seconds");
+    }
+  }
+
   setMessages((prev) => {
         if (prev.some((m) => m._id === message._id)) return prev;
         return [...prev, message];
