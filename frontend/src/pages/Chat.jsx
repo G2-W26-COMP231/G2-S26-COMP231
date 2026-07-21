@@ -8,16 +8,31 @@ import { getSocket } from "../socket";
 import { useAuth } from "../context/AuthContext";
 import GroupTabs from "../components/GroupTabs";
 
+function dayLabel(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+}
+
 export default function Chat() {
   const { groupId } = useParams();
-  const { user } = useAuth();
-  const [group, setGroup] = useState(null);
-  const [myRole, setMyRole] = useState(null);
-  const [organizerIds, setOrganizerIds] = useState(new Set());
-  const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
+  const [group, setGroup] = useState(null);
+  const [myRole, setMyRole] = useState(null);
+  const [messages, setMessages] = useState([]);
   const logRef = useRef(null);
+
+  function handleSend(e) {
+    e.preventDefault();
+    const body = draft.trim();
+    if (!body) return;
+    setError("");
+    const socket = getSocket();
+    socket.emit("message:send", { groupId, body, clientSentAt: Date.now() }, (ack) => {
+      if (ack?.error) setError(ack.error);
+    });
+    setDraft("");
+  }
 
   useEffect(() => {
     client.get(`/groups/${groupId}`).then((res) => { setGroup(res.data.group); setMyRole(res.data.myRole); }).catch(() => {});
@@ -50,6 +65,15 @@ export default function Chat() {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [messages]);
 
+const groups = [];
+  let lastDay = null;
+  for (const m of messages) {
+    const day = dayLabel(m.sentAt);
+    if (day !== lastDay) {
+      groups.push({ type: "divider", label: day, key: `div-${m._id}` });
+      lastDay = day;
+    }
+    groups.push({ type: "message", data: m, key: m._id });
   function handleSend(e) {
     e.preventDefault();
     const body = draft.trim();
@@ -67,19 +91,40 @@ export default function Chat() {
       <GroupTabs groupId={groupId} groupName={group?.name || "..."} myRole={myRole} />
 
       <div className="chat-log" ref={logRef}>
-        {messages.length === 0 && <div className="empty-state">No messages yet - say hi!</div>}
-        {messages.map((m) => {
+        {messages.length === 0 && <div className="empty-state">No messages yet - say hi!</div>} 
+        {messages.length > 0 && (
+          <div className="chat-date-divider">Conversation started: {dayLabel(messages[0].sentAt)}</div>
+        )}
+
+        {groups.map((item) => {
+          if (item.type === "divider") {
+            return (
+              <div className="chat-date-divider" key={item.key}>
+                {item.label}
+              </div>
+            );
+          }
+
+          const m = item.data;
           const mine = m.senderId?._id === user?.id || m.senderId?._id === user?._id;
           const senderIsOrganizer = m.senderId && organizerIds.has(m.senderId._id);
+
           return (
-            <div className={`chat-row ${mine ? "mine" : ""}`} key={m._id}>
+            <div className={`chat-row ${mine ? "mine" : ""}`} key={item.key}>
               {!mine && <div className="chat-avatar">👤</div>}
+
               <div className="chat-bubble-wrap">
                 <div className="chat-sender-line">
                   {mine ? "You" : m.senderId?.name || "Unknown"}
                   {senderIsOrganizer && <span className="organizer-tag"> (Organizer)</span>}
-                  <span className="time">{new Date(m.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                  <span className="time">
+                    {new Date(m.sentAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
+                  </span>
                 </div>
+
                 <div className="chat-bubble">{m.content}</div>
               </div>
             </div>
