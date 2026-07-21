@@ -43,19 +43,40 @@ export default function Chat() {
 
   useEffect(() => {
     const socket = getSocket();
+    let hasConnectedBefore = false;
+    function joinAndCatchUp() {
     socket.emit("group:join", groupId);
+    if (hasConnectedBefore) {
+        setMessages((prev) => {
+          const newest = prev[prev.length - 1];
+          if (!newest) return prev;
+          client
+            .get(`/groups/${groupId}/messages`, { params: { after: newest.sentAt } })
+            .then((res) => {
+              if (!res.data.messages.length) return;
+              setMessages((current) => {
+                const existingIds = new Set(current.map((m) => m._id));
+                const fresh = res.data.messages.filter((m) => !existingIds.has(m._id));
+                return [...current, ...fresh];
+              });
+            });
+          return prev;
+        });
+      }
+      hasConnectedBefore = true;
+    }
+    socket.on("connect", joinAndCatchUp);
     socket.connect();
-
+    if (socket.connected) joinAndCatchUp();
     function handleNew(message) {
       setMessages((prev) => {
         if (prev.some((m) => m._id === message._id)) return prev;
         return [...prev, message];
       });
     }
-
     socket.on("message:new", handleNew);
-
     return () => {
+      socket.off("connect", joinAndCatchUp);
       socket.off("message:new", handleNew);
       socket.emit("group:leave", groupId);
     };

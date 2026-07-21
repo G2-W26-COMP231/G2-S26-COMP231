@@ -36,4 +36,17 @@ const sendMessage = asyncHandler(async (req, res) => {
   }
 });
 
+const getMessageHistory = asyncHandler(async (req, res) => {
+  if (after) { 
+    const afterDate = new Date(after);
+    if (!Number.isNaN(afterDate.getTime())) {
+      filter.sentAt = { $gt: afterDate };
+    }
+  }
+  const sortDirection = after ? 1 : -1; 
+  res.json({
+    messages: after ? messages : messages.reverse(),
+  });
+});
+
 module.exports = { sendMessage, getMessageHistory, persistAndBroadcast };
