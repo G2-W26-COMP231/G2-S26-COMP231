@@ -31,7 +31,7 @@ function initChatSocket(io) {
       socket.leave(`group:${groupId}`); 
     });
     
-    socket.on("message:send", async ({ groupId, body }, ack) => {
+    socket.on("message:send", async ({ groupId, body, clientSentAt }, ack) => {
       try {
         const membership = await Membership.findOne({ groupId, userId: socket.userId }); 
         if (!membership) {       
@@ -42,6 +42,7 @@ function initChatSocket(io) {
           senderId: socket.userId,
           body,
           io,
+          clientSentAt,
         });
         ack?.({ ok: true, message });                                                 
       } catch (err) {
