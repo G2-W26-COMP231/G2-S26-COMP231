@@ -36,4 +36,27 @@ const sendMessage = asyncHandler(async (req, res) => {
   }
 });
 
+const getMessageHistory = asyncHandler(async (req, res) => {
+  const { before, limit = 30 } = req.query;
+  const pageSize = Math.min(Number(limit) || 30, 100);
+  const filter = { groupId: req.groupId, isRemoved: false };
+
+  if (before) {
+    const beforeDate = new Date(before);
+    if (!Number.isNaN(beforeDate.getTime())) {
+      filter.sentAt = { $lt: beforeDate };
+    }
+  }
+
+  const messages = await Message.find(filter)
+    .sort({ sentAt: -1 })
+    .limit(pageSize)
+    .populate("senderId", "name email");
+
+  res.json({
+    messages,
+    hasMore: messages.length === pageSize,
+  });
+});
+
 module.exports = { sendMessage, getMessageHistory, persistAndBroadcast };
