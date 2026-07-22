@@ -36,35 +36,34 @@ const sendMessage = asyncHandler(async (req, res) => {
   }
 });
 
-<<<<<<< Updated upstream
-module.exports = { sendMessage, getMessageHistory, persistAndBroadcast };
-=======
 const getMessageHistory = asyncHandler(async (req, res) => {
-  const { before, after, limit = 30 } = req.query; 
-  const pageSize = Math.min(Number(limit) || 30, 100); 
-  const filter = { groupId: req.groupId, isRemoved: false }; 
-  if (before) { 
+  const { before, after, limit = 30 } = req.query;
+  const pageSize = Math.min(Number(limit) || 30, 100);
+  const filter = { groupId: req.groupId, isRemoved: false };
+
+  if (before) {
     const beforeDate = new Date(before);
     if (!Number.isNaN(beforeDate.getTime())) {
       filter.sentAt = { $lt: beforeDate };
     }
   }
-  if (after) { 
+  if (after) {
     const afterDate = new Date(after);
     if (!Number.isNaN(afterDate.getTime())) {
       filter.sentAt = { $gt: afterDate };
     }
   }
-  const sortDirection = after ? 1 : -1; 
-  const messages = await Message.find(filter) 
+
+  const sortDirection = after ? 1 : -1;
+  const messages = await Message.find(filter)
     .sort({ sentAt: sortDirection })
     .limit(pageSize)
     .populate("senderId", "name email");
+
   res.json({
-    messages: after ? messages : messages.reverse(), 
-    hasMore: messages.length === pageSize, 
+    messages: after ? messages : messages.reverse(),
+    hasMore: messages.length === pageSize,
   });
 });
 
-module.exports = { sendMessage, getMessageHistory, persistAndBroadcast }; 
->>>>>>> Stashed changes
+module.exports = { sendMessage, getMessageHistory, persistAndBroadcast };
