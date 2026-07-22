@@ -1,6 +1,5 @@
 // pages/Chat.jsx
 
-
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import client from "../api/client";
@@ -15,39 +14,33 @@ function dayLabel(dateStr) {
 
 export default function Chat() {
   const { groupId } = useParams();
-  const [draft, setDraft] = useState("");
-  const [error, setError] = useState("");
+  const { user } = useAuth();
   const [group, setGroup] = useState(null);
   const [myRole, setMyRole] = useState(null);
+  const [organizerIds, setOrganizerIds] = useState(new Set());
   const [messages, setMessages] = useState([]);
   const [hasMore, setHasMore] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState("");
   const logRef = useRef(null);
-
-  function handleSend(e) {
-    e.preventDefault();
-    const body = draft.trim();
-    if (!body) return;
-    setError("");
-    const socket = getSocket();
-    socket.emit("message:send", { groupId, body, clientSentAt: Date.now() }, (ack) => {
-      if (ack?.error) setError(ack.error);
-    });
-    setDraft("");
-  }
 
   useEffect(() => {
     client.get(`/groups/${groupId}`).then((res) => { setGroup(res.data.group); setMyRole(res.data.myRole); }).catch(() => {});
     client.get(`/groups/${groupId}/members`).then((res) => {
       setOrganizerIds(new Set(res.data.members.filter((m) => m.role === "organizer").map((m) => m.id)));
     }).catch(() => {});
+    client.get(`/groups/${groupId}/messages`).then((res) => {
+      setMessages(res.data.messages);
+      setHasMore(res.data.hasMore);
+    });
   }, [groupId]);
 
   useEffect(() => {
     const socket = getSocket();
     let hasConnectedBefore = false;
     function joinAndCatchUp() {
-    socket.emit("group:join", groupId);
-    if (hasConnectedBefore) {
+      socket.emit("group:join", groupId);
+      if (hasConnectedBefore) {
         setMessages((prev) => {
           const newest = prev[prev.length - 1];
           if (!newest) return prev;
@@ -87,15 +80,17 @@ export default function Chat() {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [messages]);
 
-const groups = [];
-  let lastDay = null;
-  for (const m of messages) {
-    const day = dayLabel(m.sentAt);
-    if (day !== lastDay) {
-      groups.push({ type: "divider", label: day, key: `div-${m._id}` });
-      lastDay = day;
-    }
-    groups.push({ type: "message", data: m, key: m._id });
+  function loadOlder() {
+    const oldest = messages[0];
+    if (!oldest) return;
+    client
+      .get(`/groups/${groupId}/messages`, { params: { before: oldest.sentAt } })
+      .then((res) => {
+        setMessages((prev) => [...res.data.messages, ...prev]);
+        setHasMore(res.data.hasMore);
+      });
+  }
+
   function handleSend(e) {
     e.preventDefault();
     const body = draft.trim();
@@ -106,6 +101,17 @@ const groups = [];
       if (ack?.error) setError(ack.error);
     });
     setDraft("");
+  }
+
+  const groups = [];
+  let lastDay = null;
+  for (const m of messages) {
+    const day = dayLabel(m.sentAt);
+    if (day !== lastDay) {
+      groups.push({ type: "divider", label: day, key: `div-${m._id}` });
+      lastDay = day;
+    }
+    groups.push({ type: "message", data: m, key: m._id });
   }
 
   return (
@@ -119,40 +125,26 @@ const groups = [];
       )}
 
       <div className="chat-log" ref={logRef}>
-        {messages.length === 0 && <div className="empty-state">No messages yet - say hi!</div>} 
+        {messages.length === 0 && <div className="empty-state">No messages yet - say hi!</div>}
         {messages.length > 0 && (
           <div className="chat-date-divider">Conversation started: {dayLabel(messages[0].sentAt)}</div>
         )}
-
         {groups.map((item) => {
           if (item.type === "divider") {
-            return (
-              <div className="chat-date-divider" key={item.key}>
-                {item.label}
-              </div>
-            );
+            return <div className="chat-date-divider" key={item.key}>{item.label}</div>;
           }
-
           const m = item.data;
           const mine = m.senderId?._id === user?.id || m.senderId?._id === user?._id;
           const senderIsOrganizer = m.senderId && organizerIds.has(m.senderId._id);
-
           return (
             <div className={`chat-row ${mine ? "mine" : ""}`} key={item.key}>
               {!mine && <div className="chat-avatar">👤</div>}
-
               <div className="chat-bubble-wrap">
                 <div className="chat-sender-line">
                   {mine ? "You" : m.senderId?.name || "Unknown"}
                   {senderIsOrganizer && <span className="organizer-tag"> (Organizer)</span>}
-                  <span className="time">
-                    {new Date(m.sentAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit"
-                    })}
-                  </span>
+                  <span className="time">{new Date(m.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
-
                 <div className="chat-bubble">{m.content}</div>
               </div>
             </div>
@@ -173,3 +165,4 @@ const groups = [];
     </div>
   );
 }
+
