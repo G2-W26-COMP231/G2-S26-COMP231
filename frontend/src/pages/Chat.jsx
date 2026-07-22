@@ -22,6 +22,7 @@ export default function Chat() {
   const [hasMore, setHasMore] = useState(false);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
+  const [menuFor, setMenuFor] = useState(null);
   const logRef = useRef(null);
 
   useEffect(() => {
@@ -140,10 +141,25 @@ export default function Chat() {
             <div className={`chat-row ${mine ? "mine" : ""}`} key={item.key}>
               {!mine && <div className="chat-avatar">👤</div>}
               <div className="chat-bubble-wrap">
-                <div className="chat-sender-line">
+                <div 
+                className="chat-sender-line"
+                  onClick={(e) => { e.stopPropagation(); setMenuFor(menuFor === m._id ? null : m._id); }}
+                  style={{ cursor: "pointer" }}
+                  >
                   {mine ? "You" : m.senderId?.name || "Unknown"}
                   {senderIsOrganizer && <span className="organizer-tag"> (Organizer)</span>}
                   <span className="time">{new Date(m.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                  {menuFor === m._id && !mine && (
+                    <div className="chat-context-menu" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="report"
+                        disabled={reportedIds.has(m._id)}
+                        onClick={() => openReportConfirm(m)}
+                      >
+                        {reportedIds.has(m._id) ? "✓ Reported" : "⚠ Report Message"}
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="chat-bubble">{m.content}</div>
               </div>
