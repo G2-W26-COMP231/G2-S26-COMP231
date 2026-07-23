@@ -23,6 +23,7 @@ export default function Chat() {
   const [hasMore, setHasMore] = useState(false);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
+  const [reportedIds, setReportedIds] = useState(new Set());
   const [confirmReport, setConfirmReport] = useState(null);
   const [reportBusy, setReportBusy] = useState(false);
   const [menuFor, setMenuFor] = useState(null);
@@ -160,7 +161,7 @@ export default function Chat() {
           const senderIsOrganizer = m.senderId && organizerIds.has(m.senderId._id);
           return (
             <div className={`chat-row ${mine ? "mine" : ""}`} key={item.key}>
-              {!mine && <div className="chat-avatar">👤</div>}
+              {!mine && <div className="chat-avatar">ðŸ‘¤</div>}
               <div className="chat-bubble-wrap">
                 <div 
                 className="chat-sender-line"
@@ -177,7 +178,7 @@ export default function Chat() {
                         disabled={reportedIds.has(m._id)}
                         onClick={() => openReportConfirm(m)}
                       >
-                        {reportedIds.has(m._id) ? "✓ Reported" : "⚠ Report Message"}
+                        {reportedIds.has(m._id) ? "âœ“ Reported" : "âš  Report Message"}
                       </button>
                     </div>
                   )}
@@ -196,7 +197,7 @@ export default function Chat() {
           placeholder="Type a message......."
           maxLength={2000}
         />
-        <button type="submit">▶</button>
+        <button type="submit">â–¶</button>
       </form>
       {error && <p className="error-text">{error}</p>}
 
@@ -213,4 +214,3 @@ export default function Chat() {
     </div>
   );
 }
-
