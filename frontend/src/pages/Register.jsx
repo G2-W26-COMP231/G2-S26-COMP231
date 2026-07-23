@@ -32,13 +32,13 @@ export default function Register() {
         <h1>Create your account</h1>
         <form onSubmit={handleSubmit}>
           <label htmlFor="name">Name</label>
-          <input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+          <input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
 
           <label htmlFor="email">Email</label>
-          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
 
           <label htmlFor="password">Password</label>
-          <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <input id="password" type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
           <p className="muted" style={{ marginTop: 4, fontSize: "0.78rem" }}>At least 8 characters.</p>
 
           {error && <p className="error-text">{error}</p>}
