@@ -28,4 +28,23 @@ function buildShares(totalAmount, memberIds, splitType = "equal") {
   });
 }
 
+if (splitType === "custom") {
+    if (!customShares || typeof customShares !== "object") {
+      throw new Error("customShares is required for a custom split.");
+    }
+    const shares = memberIds.map((memberId) => {
+      const cents = Math.round((customShares[memberId] || 0) * 100);
+      return { memberId, amountCents: cents };
+    });
+    const sum = shares.reduce((acc, s) => acc + s.amountCents, 0);
+    if (sum !== totalCents) {
+      throw new Error(
+        `Custom split must add up exactly to the total. Got ${sum / 100}, expected ${amount}.`
+      );
+    }
+    return shares;
+  }
+
+  throw new Error(`Unknown splitType: ${splitType}`);
+
 module.exports = { buildShares };

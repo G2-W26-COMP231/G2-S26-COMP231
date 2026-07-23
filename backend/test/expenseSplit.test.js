@@ -21,6 +21,21 @@ test("equal split with a remainder distributes leftover cents instead of losing 
   );
 });
 
+test("custom split that adds up exactly to the total is accepted (per M7's acceptance test)", () => {
+  const shares = buildShares(100, ["a", "b"], "custom", { a: 60, b: 40 });
+  assert.deepEqual(shares, [
+    { memberId: "a", amountCents: 6000 },
+    { memberId: "b", amountCents: 4000 },
+  ]);
+});
+
+test("custom split that does NOT add up to the total is rejected (per M7's acceptance test)", () => {
+  assert.throws(
+    () => buildShares(100, ["a", "b"], "custom", { a: 60, b: 30 }),
+    /must add up exactly to the total/
+  );
+});
+
 test("saving with no members selected is blocked", () => {
   assert.throws(() => buildShares(50, [], "equal"), /at least one member/i);
 });
