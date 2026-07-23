@@ -6,6 +6,7 @@ import client from "../api/client";
 import { getSocket } from "../socket";
 import { useAuth } from "../context/AuthContext";
 import GroupTabs from "../components/GroupTabs";
+import Modal from "../components/Modal";
 
 function dayLabel(dateStr) {
   const d = new Date(dateStr);
@@ -22,6 +23,8 @@ export default function Chat() {
   const [hasMore, setHasMore] = useState(false);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
+  const [confirmReport, setConfirmReport] = useState(null);
+  const [reportBusy, setReportBusy] = useState(false);
   const [menuFor, setMenuFor] = useState(null);
   const logRef = useRef(null);
 
@@ -104,6 +107,24 @@ export default function Chat() {
     setDraft("");
   }
 
+  function openReportConfirm(message) {
+    setConfirmReport(message);
+    setMenuFor(null);
+  }
+
+  function confirmReportMessage() {
+    if (!confirmReport) return;
+    setReportBusy(true);
+    client
+      .post(`/groups/${groupId}/messages/${confirmReport._id}/report`)
+      .then(() => setReportedIds((prev) => new Set(prev).add(confirmReport._id)))
+      .catch((err) => setError(err.response?.data?.error || "Could not report this message."))
+      .finally(() => {
+        setReportBusy(false);
+        setConfirmReport(null);
+      });
+  }
+
   const groups = [];
   let lastDay = null;
   for (const m of messages) {
@@ -178,6 +199,17 @@ export default function Chat() {
         <button type="submit">▶</button>
       </form>
       {error && <p className="error-text">{error}</p>}
+
+      {confirmReport && (
+        <Modal
+          title="Report this message?"
+          description={`This will send "${confirmReport.senderId?.name || "this message"}"'s message for admin review. This can't be undone.`}
+          confirmLabel="Report Message"
+          busy={reportBusy}
+          onConfirm={confirmReportMessage}
+          onCancel={() => setConfirmReport(null)}
+        />
+      )}
     </div>
   );
 }
