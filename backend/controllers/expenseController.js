@@ -73,4 +73,20 @@ const logExpense = asyncHandler(async (req, res) => {
   res.status(201).json({ expense, shares: expenseShares });
 });
 
-module.exports = { logExpense };
+
+const listExpenses = asyncHandler(async (req, res) => {
+  const expenses = await Expense.find({ groupId: req.groupId })
+    .sort({ createdAt: -1 })
+    .populate("paidBy", "name");
+
+  const withShares = await Promise.all(
+    expenses.map(async (exp) => {
+      const shares = await ExpenseShare.find({ expenseId: exp._id }).populate("userId", "name");
+      return { ...exp.toObject(), shares };
+    })
+  );
+
+  res.json({ expenses: withShares });
+});
+
+module.exports = { logExpense, listExpenses };

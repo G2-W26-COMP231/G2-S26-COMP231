@@ -1,9 +1,3 @@
-// components/Sidebar.jsx
-// Persistent left navigation matching the mockup: CrewUp logo, plain
-// outline icons for Home / Groups / Profile / Settings, active item gets a
-// white pill background with purple icon+text (see index.css). Logout lives
-// on the Profile page, not here - matches how the mockups never show a
-// logout control in the sidebar itself.
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { HomeIcon, GroupsIcon, ProfileIcon, SettingsIcon } from "./icons";
@@ -12,7 +6,7 @@ export default function Sidebar() {
   const { user } = useAuth();
   const location = useLocation();
 
-  if (!user) return null; // no sidebar on /login, /register
+  if (!user) return null;
 
   const isActive = (path) => (path === "/" ? location.pathname === "/" : location.pathname.startsWith(path));
 

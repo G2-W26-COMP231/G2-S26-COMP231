@@ -1,6 +1,3 @@
-// components/Modal.jsx
-// Reusable confirmation modal, matching the "Remove member?" / "Leave
-// group?" / "Delete group?" style confirmation dialogs across the mockups.
 export default function Modal({ title, description, confirmLabel, onConfirm, onCancel, busy }) {
   return (
     <div className="modal-overlay" onClick={onCancel}>

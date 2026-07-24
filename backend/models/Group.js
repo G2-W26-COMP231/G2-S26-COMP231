@@ -1,27 +1,13 @@
-// models/Membership.js
-// Matches ERD: groupId (FK), userId (FK), status, createdAt
 const mongoose = require("mongoose");
 
-const membershipSchema = new mongoose.Schema(
+const groupSchema = new mongoose.Schema(
   {
-    groupId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Group",
-      required: true,
-    },
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    status: {
-      type: String,
-      enum: ["pending", "member", "co-host"],
-      default: "pending",
-      required: true,
-    },
+    name: { type: String, required: true, trim: true, maxlength: 100 },
+    description: { type: String, trim: true, maxlength: 500, default: "" },
+    organizerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    status: { type: String, enum: ["active", "archived"], default: "active" },
   },
-  { timestamps: true } 
+  { timestamps: true } // createdAt
 );
 
-module.exports = mongoose.model("Membership", membershipSchema);
+module.exports = mongoose.model("Group", groupSchema);

@@ -10,6 +10,7 @@ const membershipSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// A user can only have one membership record per group.
 membershipSchema.index({ groupId: 1, userId: 1 }, { unique: true });
 
 module.exports = mongoose.model("Membership", membershipSchema);

@@ -1,4 +1,3 @@
-// M1 - As a Group Organizer, I can create a group.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
@@ -14,10 +13,10 @@ export default function CreateGroup() {
     e.preventDefault();
     setError("");
     if (!name.trim()) {
-      setError("Group name is required.");
-      return;
+    setError("Group name is required.");
+    return;
     }
-
+    
     if (name.trim().length < 3) {
       setError("Group name must be at least 3 characters.");
       return;

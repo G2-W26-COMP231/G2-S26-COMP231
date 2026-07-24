@@ -1,5 +1,3 @@
-// pages/Chat.jsx
-
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import client from "../api/client";
@@ -24,9 +22,9 @@ export default function Chat() {
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
   const [reportedIds, setReportedIds] = useState(new Set());
-  const [confirmReport, setConfirmReport] = useState(null);
+  const [menuFor, setMenuFor] = useState(null); // message id with context menu open
+  const [confirmReport, setConfirmReport] = useState(null); // message pending report confirmation
   const [reportBusy, setReportBusy] = useState(false);
-  const [menuFor, setMenuFor] = useState(null);
   const logRef = useRef(null);
 
   useEffect(() => {
@@ -43,6 +41,7 @@ export default function Chat() {
   useEffect(() => {
     const socket = getSocket();
     let hasConnectedBefore = false;
+
     function joinAndCatchUp() {
       socket.emit("group:join", groupId);
       if (hasConnectedBefore) {
@@ -64,16 +63,20 @@ export default function Chat() {
       }
       hasConnectedBefore = true;
     }
+
     socket.on("connect", joinAndCatchUp);
     socket.connect();
+
     if (socket.connected) joinAndCatchUp();
+
     function handleNew(message) {
       setMessages((prev) => {
-        if (prev.some((m) => m._id === message._id)) return prev;
+        if (prev.some((m) => m._id === message._id)) return prev; // dedupe
         return [...prev, message];
       });
     }
     socket.on("message:new", handleNew);
+
     return () => {
       socket.off("connect", joinAndCatchUp);
       socket.off("message:new", handleNew);
@@ -147,7 +150,7 @@ export default function Chat() {
         </button>
       )}
 
-      <div className="chat-log" ref={logRef}>
+      <div className="chat-log" ref={logRef} onClick={() => setMenuFor(null)}>
         {messages.length === 0 && <div className="empty-state">No messages yet - say hi!</div>}
         {messages.length > 0 && (
           <div className="chat-date-divider">Conversation started: {dayLabel(messages[0].sentAt)}</div>
@@ -161,13 +164,13 @@ export default function Chat() {
           const senderIsOrganizer = m.senderId && organizerIds.has(m.senderId._id);
           return (
             <div className={`chat-row ${mine ? "mine" : ""}`} key={item.key}>
-              {!mine && <div className="chat-avatar">ðŸ‘¤</div>}
+              {!mine && <div className="chat-avatar">👤</div>}
               <div className="chat-bubble-wrap">
-                <div 
-                className="chat-sender-line"
+                <div
+                  className="chat-sender-line"
                   onClick={(e) => { e.stopPropagation(); setMenuFor(menuFor === m._id ? null : m._id); }}
                   style={{ cursor: "pointer" }}
-                  >
+                >
                   {mine ? "You" : m.senderId?.name || "Unknown"}
                   {senderIsOrganizer && <span className="organizer-tag"> (Organizer)</span>}
                   <span className="time">{new Date(m.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
@@ -178,7 +181,7 @@ export default function Chat() {
                         disabled={reportedIds.has(m._id)}
                         onClick={() => openReportConfirm(m)}
                       >
-                        {reportedIds.has(m._id) ? "âœ“ Reported" : "âš  Report Message"}
+                        {reportedIds.has(m._id) ? "✓ Reported" : "⚠ Report Message"}
                       </button>
                     </div>
                   )}
@@ -197,7 +200,7 @@ export default function Chat() {
           placeholder="Type a message......."
           maxLength={2000}
         />
-        <button type="submit">â–¶</button>
+        <button type="submit">▶</button>
       </form>
       {error && <p className="error-text">{error}</p>}
 

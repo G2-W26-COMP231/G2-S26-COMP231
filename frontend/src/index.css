@@ -1,5 +1,3 @@
-/* index.css - matches the CrewUp paper-prototype mockups: light gray
-   sidebar, purple/indigo brand, green top accent bar, card-based content. */
 :root {
   --bg: #ffffff;
   --sidebar-bg: #e9e9e9;
@@ -15,7 +13,7 @@
   --pill-yellow: #c9971b;
   --radius: 8px;
   font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 18px; 
+  font-size: 18px; /* was the browser default 16px - scales every rem value below */
 }
 
 * { box-sizing: border-box; }
@@ -28,6 +26,7 @@ body {
 
 a { color: var(--brand); }
 
+/* ---------- App shell: sidebar + content ---------- */
 .app-layout {
   display: flex;
   min-height: 100vh;
@@ -105,6 +104,7 @@ a { color: var(--brand); }
   width: 100%;
 }
 
+/* ---------- Auth pages (Login / Register) ---------- */
 .auth-page {
   min-height: 100vh;
   width: 100%;
@@ -120,6 +120,7 @@ a { color: var(--brand); }
 }
 .auth-page h1 { font-size: 1.9rem; margin-bottom: 8px; }
 
+/* ---------- Top bar (title + icons) ---------- */
 .page-topbar {
   display: flex;
   justify-content: space-between;
@@ -143,6 +144,7 @@ h3 { font-size: 1rem; margin: 0 0 8px; }
 .subtitle { color: var(--muted); font-size: 0.9rem; margin: 0 0 20px; }
 .muted { color: var(--muted); font-size: 0.9rem; }
 
+/* ---------- Forms ---------- */
 label { display: block; font-size: 0.85rem; font-weight: 600; margin: 14px 0 6px; color: #333; }
 input, textarea, select {
   width: 100%;
@@ -176,6 +178,7 @@ button.text-link { background: none; color: var(--danger); font-weight: 600; pad
 .empty-state { color: var(--muted); text-align: center; padding: 24px 0; }
 .form-actions { margin-top: 20px; display: flex; gap: 10px; }
 
+/* ---------- Cards / list rows ---------- */
 .card {
   background: #fff;
   border: 2px solid var(--brand);
@@ -207,6 +210,7 @@ button.text-link { background: none; color: var(--danger); font-weight: 600; pad
   color: var(--muted);
 }
 
+/* ---------- Tabs ---------- */
 .tabs {
   display: flex;
   gap: 26px;
@@ -226,6 +230,7 @@ button.text-link { background: none; color: var(--danger); font-weight: 600; pad
 }
 .tabs a.active { color: var(--brand); border-bottom-color: var(--brand); }
 
+/* ---------- Group cards on dashboard ---------- */
 .group-card {
   border: 2px solid var(--brand);
   border-radius: var(--radius);
@@ -243,6 +248,7 @@ button.text-link { background: none; color: var(--danger); font-weight: 600; pad
   background: #f4f2ff;
 }
 
+/* ---------- Event / expense row cards ---------- */
 .event-card, .expense-row-card {
   border: 2px solid var(--brand);
   border-radius: var(--radius);
@@ -258,6 +264,7 @@ button.text-link { background: none; color: var(--danger); font-weight: 600; pad
 }
 .expense-row-card.filled .amount { font-weight: 700; }
 
+/* ---------- Notifications dropdown ---------- */
 .notif-dropdown {
   position: absolute;
   top: 34px;
@@ -280,6 +287,7 @@ button.text-link { background: none; color: var(--danger); font-weight: 600; pad
 .notif-actions { display: flex; gap: 8px; margin-top: 10px; }
 .notif-actions button { padding: 7px 14px; font-size: 0.82rem; }
 
+/* ---------- Chat ---------- */
 .chat-log { max-height: 460px; overflow-y: auto; padding: 4px 4px 4px 0; }
 .chat-date-divider {
   text-align: center;
@@ -342,6 +350,7 @@ button.text-link { background: none; color: var(--danger); font-weight: 600; pad
 .chat-form input { flex: 1; border-radius: 999px; }
 .chat-form button { border-radius: 50%; width: 42px; height: 42px; padding: 0; display: flex; align-items: center; justify-content: center; }
 
+/* ---------- RSVP ---------- */
 .rsvp-choice-row { display: flex; gap: 12px; margin: 14px 0; }
 .rsvp-choice-row button { flex: 1; }
 .rsvp-choice-row button.selected.going { background: var(--pill-green); }
@@ -354,6 +363,7 @@ button.text-link { background: none; color: var(--danger); font-weight: 600; pad
 .rsvp-status-tabs .maybe { color: var(--pill-yellow); }
 .rsvp-status-tabs .cant_make_it { color: var(--danger); }
 
+/* ---------- Modal ---------- */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.25);
   display: flex; align-items: center; justify-content: center; z-index: 100;
@@ -370,12 +380,17 @@ button.text-link { background: none; color: var(--danger); font-weight: 600; pad
 .modal-box p { font-size: 0.9rem; margin: 0 0 18px; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
+/* ---------- Misc ---------- */
 .email-chip-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .email-chip-row input { flex: 1; }
 .email-chip-row button.remove-chip { background: none; color: var(--danger); font-weight: 800; padding: 4px 10px; }
 .add-email-link { background: none; color: var(--brand); font-weight: 700; padding: 8px 0; text-align: left; }
 
-
+/* ---------- Responsive ---------- */
+/* Tablet and down: sidebar collapses into a bottom tab bar (icons + short
+   labels), matching how the mockups' nav items map naturally onto a mobile
+   bottom-nav pattern. Content area gets bottom padding so it never sits
+   underneath the fixed bar. */
 @media (max-width: 860px) {
   .app-layout { flex-direction: column; }
 
@@ -432,6 +447,7 @@ button.text-link { background: none; color: var(--danger); font-weight: 600; pad
   .modal-box { padding: 18px; }
 }
 
+/* Small phones: tighter spacing, form rows stack instead of sitting side by side */
 @media (max-width: 480px) {
   .content-area { padding: 16px 12px 96px; }
   h1 { font-size: 1.3rem; }

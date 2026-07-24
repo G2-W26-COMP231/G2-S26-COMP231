@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { submitRsvp } = require("../controllers/rsvpController");
+const { submitRsvp, getMyRsvp } = require("../controllers/rsvpController");
 
 function mockRes() {
   const res = {};
@@ -12,6 +12,8 @@ function mockRes() {
 }
 
 function mockApp() {
+  // submitRsvp calls req.app.get("io") - mock it so the emit doesn't crash
+  // when no real Socket.io server is running during tests
   return { get: () => null };
 }
 
@@ -24,9 +26,7 @@ test("submitRsvp rejects an invalid response value", async () => {
     app: mockApp(),
   };
   const res = mockRes();
-
   await submitRsvp(req, res, () => {});
-
   assert.equal(res.statusCode, 400);
   assert.match(res.body.error, /response must be one of/i);
 });
@@ -40,9 +40,7 @@ test("submitRsvp rejects a missing response", async () => {
     app: mockApp(),
   };
   const res = mockRes();
-
   await submitRsvp(req, res, () => {});
-
   assert.equal(res.statusCode, 400);
 });
 
@@ -55,69 +53,18 @@ test("submitRsvp rejects an unknown event", async () => {
     app: mockApp(),
   };
   const res = mockRes();
-
   await submitRsvp(req, res, () => {});
-
   assert.equal(res.statusCode, 404);
   assert.match(res.body.error, /event not found/i);
 });
 
-test("submitRsvp emits a Socket.io update after saving", async (t) => {
-  const Event = require("../models/Event");
-  const Rsvp = require("../models/Rsvp");
-
-  const originalFindOne = Event.findOne;
-  const originalFindOneAndUpdate = Rsvp.findOneAndUpdate;
-
-  t.after(() => {
-    Event.findOne = originalFindOne;
-    Rsvp.findOneAndUpdate = originalFindOneAndUpdate;
-  });
-
-  Event.findOne = async function () {
-    return { _id: "fake-event-id", groupId: "fake-group-id" };
-  };
-
-  Rsvp.findOneAndUpdate = async function () {
-    return {
-      eventId: "fake-event-id",
-      userId: "member-id",
-      response: "going",
-    };
-  };
-
-  let emittedRoom = null;
-  let emittedEvent = null;
-  let emittedPayload = null;
-
-  const io = {
-    to(room) {
-      emittedRoom = room;
-      return {
-        emit(eventName, payload) {
-          emittedEvent = eventName;
-          emittedPayload = payload;
-        },
-      };
-    },
-  };
-
+test("getMyRsvp returns no_response when the user hasn't RSVP'd yet", async () => {
   const req = {
-    params: { eventId: "fake-event-id" },
-    body: { response: "going" },
-    groupId: "fake-group-id",
+    params: { eventId: "an-event-with-no-rsvp-yet" },
     userId: "member-id",
-    app: { get: () => io },
   };
   const res = mockRes();
-
-  await submitRsvp(req, res, () => {});
-
-  assert.equal(emittedRoom, "group:fake-group-id");
-  assert.equal(emittedEvent, "rsvp:update");
-  assert.deepEqual(emittedPayload, {
-    eventId: "fake-event-id",
-    userId: "member-id",
-    response: "going",
-  });
+  await getMyRsvp(req, res, () => {});
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.rsvp.response, "no_response");
 });

@@ -1,34 +1,24 @@
-function buildShares(totalAmount, memberIds, splitType = "equal") {
-  const amount = Number(totalAmount);
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-    throw new Error("Total amount must be greater than zero.");
-  }
-
+function buildShares(amount, memberIds, splitType, customShares) {
   if (!Array.isArray(memberIds) || memberIds.length === 0) {
-    throw new Error("At least one member is required.");
+    throw new Error("At least one member must be selected for the split.");
   }
-
-  if (splitType !== "equal") {
-    throw new Error("Only equal split is supported.");
-  }
-
   const totalCents = Math.round(amount * 100);
-  const baseShare = Math.floor(totalCents / memberIds.length);
-  let remainder = totalCents % memberIds.length;
+  if (!Number.isFinite(totalCents) || totalCents <= 0) {
+    throw new Error("Amount must be a positive number.");
+  }
 
-  return memberIds.map((memberId) => {
-    const extraCent = remainder > 0 ? 1 : 0;
-    remainder -= extraCent;
-
-    return {
+  // ---- Task 15.2 (Milad) - equal split ----
+  if (splitType === "equal") {
+    const base = Math.floor(totalCents / memberIds.length);
+    const remainder = totalCents - base * memberIds.length;
+    return memberIds.map((memberId, i) => ({
       memberId,
-      amountCents: baseShare + extraCent,
-    };
-  });
-}
+      amountCents: base + (i < remainder ? 1 : 0),
+    }));
+  }
 
-if (splitType === "custom") {
+  // ---- Task 15.3 (Czarina) - custom split ----
+  if (splitType === "custom") {
     if (!customShares || typeof customShares !== "object") {
       throw new Error("customShares is required for a custom split.");
     }
@@ -46,5 +36,6 @@ if (splitType === "custom") {
   }
 
   throw new Error(`Unknown splitType: ${splitType}`);
+}
 
 module.exports = { buildShares };

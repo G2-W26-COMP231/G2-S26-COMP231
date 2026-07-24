@@ -22,38 +22,20 @@ export default function AcceptInvite() {
       })
       .catch((err) => {
         setStatus("error");
-        setError(
-          err.response?.data?.error ||
-            "Could not accept this invitation."
-        );
+        setError(err.response?.data?.error || "Could not accept this invitation.");
       });
   }, [loading, user, token, navigate]);
 
   return (
-    <div
-      className="content-area"
-      style={{ maxWidth: 420, paddingTop: 48 }}
-    >
+    <div className="content-area" style={{ maxWidth: 420, paddingTop: 48 }}>
       <div className="card">
         <h1>Group invitation</h1>
-
-        {status === "working" && (
-          <p className="muted">Accepting your invitation...</p>
-        )}
-
-        {status === "done" && (
-          <p>You're in! Taking you to the group...</p>
-        )}
-
+        {status === "working" && <p className="muted">Accepting your invitation...</p>}
+        {status === "done" && <p>You're in! Taking you to the group...</p>}
         {status === "error" && (
           <>
             <p className="error-text">{error}</p>
-
-            <Link to="/">
-              <button className="secondary">
-                Back to my groups
-              </button>
-            </Link>
+            <Link to="/"><button className="secondary">Back to my groups</button></Link>
           </>
         )}
       </div>

@@ -5,13 +5,13 @@ import GroupTabs from "../components/GroupTabs";
 
 export default function GroupWorkspace() {
   const { groupId } = useParams();
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
+  const [data, setData] = useState(null);         
+  const [error, setError] = useState("");    
 
-  useEffect(() => {
+  useEffect(() => {                        
     client
-      .get(`/groups/${groupId}`)
-      .then((res) => setData(res.data))
+      .get(`/groups/${groupId}`)                                      
+      .then((res) => setData(res.data))           
       .catch((err) => setError(err.response?.data?.error || "Could not load this group."));
   }, [groupId]);
 
@@ -22,20 +22,21 @@ export default function GroupWorkspace() {
 
   return (
     <div className="content-area">
+
       <GroupTabs groupId={groupId} groupName={group.name} memberCount={summary.memberCount} myRole={myRole} />
 
       {myRole === "organizer" && (
         <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
-          <Link to={`/groups/${groupId}/invite`}><button>Invite Member</button></Link>
-          <Link to={`/groups/${groupId}/members`}><button className="secondary">Manage Members</button></Link>
+          <Link to={`/groups/${groupId}/invite`}><button>Invite Member</button></Link> 
+          <Link to={`/groups/${groupId}/members`}><button className="secondary">Manage Members</button></Link> 
         </div>
       )}
 
-      <h2>Upcoming Events</h2>
+      <h2>Upcoming Events</h2> 
       {summary.upcomingEventCount === 0 && <p className="muted" style={{ marginBottom: 20 }}>No upcoming events yet.</p>}
-      {summary.upcomingEventCount > 0 && (
-        <div className="event-card" style={{ marginBottom: 24 }}>
-          <p className="muted" style={{ margin: 0 }}>
+      {summary.upcomingEventCount > 0 && ( 
+        <div className="event-card" style={{ marginBottom: 24 }}> 
+          <p className="muted" style={{ margin: 0 }}>      
             {summary.upcomingEventCount} upcoming event{summary.upcomingEventCount === 1 ? "" : "s"} -{" "}
             <Link to={`/groups/${groupId}/events`}>View all</Link>
           </p>
@@ -46,7 +47,7 @@ export default function GroupWorkspace() {
         <>
           <h2>Recent Expenses</h2>
           {summary.expenseCount === 0 && <p className="muted">No expenses logged yet.</p>}
-          {summary.expenseCount > 0 && (
+          {summary.expenseCount > 0 && (   
             <div className="expense-row-card filled">
               <span>{summary.expenseCount} logged expense{summary.expenseCount === 1 ? "" : "s"}</span>
               <Link to={`/groups/${groupId}/expenses`} style={{ color: "#fff", textDecoration: "underline" }}>

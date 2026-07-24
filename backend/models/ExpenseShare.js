@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const expenseShareSchema = new mongoose.Schema({
   expenseId: { type: mongoose.Schema.Types.ObjectId, ref: "Expense", required: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  shareAmount: { type: Number, required: true, min: 0 },
+  shareAmount: { type: Number, required: true, min: 0 }, // integer cents, same convention as Expense.amount
 });
 
 expenseShareSchema.index({ expenseId: 1 });

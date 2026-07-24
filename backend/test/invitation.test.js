@@ -261,4 +261,4 @@ test("acceptInvitation rejects an expired invitation", async () => {
   } finally {
     Invitation.findOne = originalFindOne;
   }
-})
+});

@@ -40,7 +40,6 @@ const getMessageHistory = asyncHandler(async (req, res) => {
   const { before, after, limit = 30 } = req.query;
   const pageSize = Math.min(Number(limit) || 30, 100);
   const filter = { groupId: req.groupId, isRemoved: false };
-
   if (before) {
     const beforeDate = new Date(before);
     if (!Number.isNaN(beforeDate.getTime())) {
@@ -53,13 +52,11 @@ const getMessageHistory = asyncHandler(async (req, res) => {
       filter.sentAt = { $gt: afterDate };
     }
   }
-
   const sortDirection = after ? 1 : -1;
   const messages = await Message.find(filter)
     .sort({ sentAt: sortDirection })
     .limit(pageSize)
     .populate("senderId", "name email");
-
   res.json({
     messages: after ? messages : messages.reverse(),
     hasMore: messages.length === pageSize,

@@ -1,12 +1,10 @@
-// pages/EventDetail.jsx
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import client from "../api/client";
 import { getSocket } from "../socket";
 import GroupTabs from "../components/GroupTabs";
 
-const RESPONSE_LABELS = { no_response: "No response", going: "Going", maybe: "Maybe", cant_make_it: "Can't make it" };
+const RESPONSE_LABELS = { no_response: "No response", going: "Going", maybe: "Maybe", cant_make_it: "Can't make it" }; // Task 8.4 (Aadil) - M13
 
 export default function EventDetail() {
   const { groupId, eventId } = useParams();
@@ -148,4 +146,3 @@ export default function EventDetail() {
     </div>
   );
 }
-

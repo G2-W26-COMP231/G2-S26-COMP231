@@ -1,11 +1,10 @@
 const Event = require("../models/Events");
 const Rsvp = require("../models/Rsvp");
-const Membership = require("../models/Membership");
-const asyncHandler = require("../utils/asynchHandler");
+const Membership = require("../models/Membership"); 
+const asyncHandler = require("../utils/asyncHandler"); 
 
 const createEvent = asyncHandler(async (req, res) => {
   const { title, location, startTime, endTime, description } = req.body;
-
   if (!title || !location || !startTime) {
     return res.status(400).json({ error: "title, location, and startTime are required." });
   }
@@ -23,7 +22,6 @@ const createEvent = asyncHandler(async (req, res) => {
       return res.status(400).json({ error: "endTime must be a valid date/time on or after startTime." });
     }
   }
-
   const event = await Event.create({
     groupId: req.groupId,
     title: title.trim(),
@@ -41,8 +39,16 @@ const createEvent = asyncHandler(async (req, res) => {
       { ordered: false }
     );
   }
-
   res.status(201).json({ event });
+});
+
+const getUpcomingEvents = asyncHandler(async (req, res) => {
+  const events = await Event.find({
+    groupId: req.groupId,
+    isCancelled: false,
+    startTime: { $gte: new Date() },
+  }).sort({ startTime: 1 });
+  res.json({ events }); 
 });
 
 const getEventRsvps = asyncHandler(async (req, res) => {
@@ -52,17 +58,7 @@ const getEventRsvps = asyncHandler(async (req, res) => {
     return res.status(404).json({ error: "Event not found." });
   }
   const rsvps = await Rsvp.find({ eventId }).populate("userId", "name email");
-  res.json({ event, rsvps });
+  res.json({ event, rsvps });   
 });
 
-const getUpcomingEvents = asyncHandler(async (req, res) => {
-  const events = await Event.find({
-    groupId: req.groupId,
-    isCancelled: false,
-    startTime: { $gte: new Date() },
-  }).sort({ startTime: 1 });
-
-  res.json({ events });
-});
-
-module.exports = { createEvent, getEventRsvps, getUpcomingEvents };
+module.exports = { createEvent, getUpcomingEvents, getEventRsvps };

@@ -1,24 +1,23 @@
 // pages/InviteMembers.jsx
 // M2 - As a Group Organizer, I can invite members by email.
-// Note: this is the send side only; accepting is a separate story (M10).
-// Matches the mockup: multiple email chips can be queued up and sent
-// together, with an optional message. The backend invite endpoint takes one
-// email at a time, so the frontend sends one request per chip and reports
-// which ones failed (e.g. already a member, already pending).
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import client from "../api/client";
+// Send side only; accepting is a separate story (M10). Sends one request
+// per email chip since the backend endpoint takes one at a time.
+
+import { useEffect, useState } from "react";               // Task 2.6 (Dang)
+import { useNavigate, useParams } from "react-router-dom";  // Task 2.5 (Aadil)
+import client from "../api/client";                          // Task 2.6 (Dang)
 
 export default function InviteMembers() {
-  const { groupId } = useParams();
-  const navigate = useNavigate();
-  const [emails, setEmails] = useState([""]);
-  const [message, setMessage] = useState("");
-  const [pending, setPending] = useState([]);
-  const [error, setError] = useState("");
-  const [note, setNote] = useState("");
-  const [busy, setBusy] = useState(false);
+  const { groupId } = useParams();          // Task 2.5 (Aadil)
+  const navigate = useNavigate();           // Task 2.5 (Aadil)
+  const [emails, setEmails] = useState([""]);       // Task 2.6 (Dang)
+  const [message, setMessage] = useState("");       // Task 2.6 (Dang)
+  const [pending, setPending] = useState([]);       // Task 2.6 (Dang)
+  const [error, setError] = useState("");           // Task 2.7 (Hunee)
+  const [note, setNote] = useState("");             // Task 2.7 (Hunee)
+  const [busy, setBusy] = useState(false);          // Task 2.6 (Dang)
 
+  // ---- Task 2.6 (Dang) ----
   function loadPending() {
     client.get(`/groups/${groupId}/invitations`).then((res) => setPending(res.data.invites));
   }
@@ -93,10 +92,6 @@ export default function InviteMembers() {
 
         <label htmlFor="message">Message (Optional)</label>
         <input id="message" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Join the group..." />
-        {/* Not sent anywhere yet - SendGrid (the external service in the
-            architecture diagram) isn't wired up, so there's no email to
-            attach this message to. Collected here for UI parity with the
-            mockup; hook it up once M2's email-sending is implemented. */}
 
         {error && <p className="error-text">{error}</p>}
         {note && <p className="muted" style={{ marginTop: 8 }}>{note}</p>}

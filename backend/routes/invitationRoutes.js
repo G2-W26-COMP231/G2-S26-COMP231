@@ -1,11 +1,20 @@
 const express = require("express");
 const requireMembership = require("../middleware/requireMembership");
 const requireOrganizer = require("../middleware/requireOrganizer");
-const { inviteMember } = require("../controllers/invitationController");
+const {
+  inviteMember,
+  listPendingInvites,
+  listMyInvitations,
+  acceptInvitation,
+} = require("../controllers/invitationController");
 
-const router = express.Router({ mergeParams: true });
+const groupInvitationRouter = express.Router({ mergeParams: true });
+groupInvitationRouter.use(requireMembership, requireOrganizer);
+groupInvitationRouter.post("/", inviteMember);
+groupInvitationRouter.get("/", listPendingInvites);
 
-router.use(requireMembership, requireOrganizer);
-router.post("/", inviteMember);
+const acceptInvitationRouter = express.Router();
+acceptInvitationRouter.get("/mine", listMyInvitations);
+acceptInvitationRouter.post("/:token/accept", acceptInvitation);
 
-module.exports = router;
+module.exports = { groupInvitationRouter, acceptInvitationRouter };

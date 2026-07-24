@@ -1,11 +1,3 @@
-// components/GroupTabs.jsx
-// Group workspace header + tab nav, matching the mockups: group name,
-// member count, notification bell top-right.
-//
-// The Expenses tab only shows for organizers. Members viewing the expense
-// list is a separate story - M16 "As a Group Member, I can view shared
-// expenses" - which is Iteration 2 scope (Table 12), not Iteration 1, so
-// there's no Iteration 1 entry point to it for members yet.
 import { NavLink } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
 
