@@ -110,4 +110,4 @@ We're using Node's built-in test runner (`node:test`), no extra framework needed
 
 ## Deployment
 
-Deploying the app to a live environment (Render, etc.) is the Scrum Master's responsibility for this project once all iterations is finished, per our team's workflow decision.
+Deploying the app to a live environment (Render, etc.) is the Scrum Master's responsibility for this project, per our team's workflow decision.
