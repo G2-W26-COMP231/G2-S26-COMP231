@@ -38,4 +38,53 @@ function buildShares(amount, memberIds, splitType, customShares) {
   throw new Error(`Unknown splitType: ${splitType}`);
 }
 
-module.exports = { buildShares };
+// ---- Task 17.1 (Hunee) - pairwise debt calc / balance netting ----
+function calculateNetBalances(expenses) {
+  const balances = {};
+  const touch = (id) => {
+    if (!(id in balances)) balances[id] = 0;
+  };
+
+  for (const expense of expenses) {
+    touch(expense.payerId);
+    for (const share of expense.shares) {
+      touch(share.memberId);
+      if (share.memberId === expense.payerId) {
+        continue;
+      }
+      balances[share.memberId] -= share.amountCents;
+      balances[expense.payerId] += share.amountCents;
+    }
+  }
+  return balances;
+}
+
+function simplifyDebts(balances) {
+  const creditors = [];
+  const debtors = [];
+  for (const [id, amount] of Object.entries(balances)) {
+    if (amount > 0) creditors.push({ id, amount });
+    else if (amount < 0) debtors.push({ id, amount: -amount });
+  }
+  creditors.sort((a, b) => b.amount - a.amount);
+  debtors.sort((a, b) => b.amount - a.amount);
+
+  const transactions = [];
+  let i = 0;
+  let j = 0;
+  while (i < debtors.length && j < creditors.length) {
+    const debtor = debtors[i];
+    const creditor = creditors[j];
+    const settled = Math.min(debtor.amount, creditor.amount);
+    if (settled > 0) {
+      transactions.push({ from: debtor.id, to: creditor.id, amountCents: settled });
+    }
+    debtor.amount -= settled;
+    creditor.amount -= settled;
+    if (debtor.amount === 0) i++;
+    if (creditor.amount === 0) j++;
+  }
+  return transactions;
+}
+
+module.exports = { buildShares, calculateNetBalances, simplifyDebts };
