@@ -1,23 +1,17 @@
-// pages/InviteMembers.jsx
-// M2 - As a Group Organizer, I can invite members by email.
-// Send side only; accepting is a separate story (M10). Sends one request
-// per email chip since the backend endpoint takes one at a time.
-
-import { useEffect, useState } from "react";               // Task 2.6 (Dang)
-import { useNavigate, useParams } from "react-router-dom";  // Task 2.5 (Aadil)
-import client from "../api/client";                          // Task 2.6 (Dang)
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import client from "../api/client";
 
 export default function InviteMembers() {
-  const { groupId } = useParams();          // Task 2.5 (Aadil)
-  const navigate = useNavigate();           // Task 2.5 (Aadil)
-  const [emails, setEmails] = useState([""]);       // Task 2.6 (Dang)
-  const [message, setMessage] = useState("");       // Task 2.6 (Dang)
-  const [pending, setPending] = useState([]);       // Task 2.6 (Dang)
-  const [error, setError] = useState("");           // Task 2.7 (Hunee)
-  const [note, setNote] = useState("");             // Task 2.7 (Hunee)
-  const [busy, setBusy] = useState(false);          // Task 2.6 (Dang)
+  const { groupId } = useParams();
+  const navigate = useNavigate();
+  const [emails, setEmails] = useState([""]);
+  const [message, setMessage] = useState("");
+  const [pending, setPending] = useState([]);
+  const [error, setError] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  // ---- Task 2.6 (Dang) ----
   function loadPending() {
     client.get(`/groups/${groupId}/invitations`).then((res) => setPending(res.data.invites));
   }
