@@ -29,9 +29,9 @@ export default function Expenses() {
       setMyRole(res.data.myRole);
       if (res.data.myRole === "organizer") {
         client.get(`/groups/${groupId}/members`).then((r) => setMembers(r.data.members));
-        loadExpenses();
       }
     });
+    loadExpenses();
   }, [groupId]);
 
   function toggleMember(id) {
@@ -69,17 +69,6 @@ export default function Expenses() {
     } finally {
       setBusy(false);
     }
-  }
-
-  if (myRole && myRole !== "organizer") {
-    return (
-      <div className="content-area">
-        <GroupTabs groupId={groupId} groupName={group?.name || "..."} myRole={myRole} />
-        <div className="empty-state">
-          Viewing shared expenses as a member isn't part of this release yet.
-        </div>
-      </div>
-    );
   }
 
   return (
