@@ -3,7 +3,7 @@ const Membership = require("../models/Membership");
 const Expense = require("../models/Expense");
 const ExpenseShare = require("../models/ExpenseShare");
 const asyncHandler = require("../utils/asyncHandler");
-const { buildShares, calculateNetBalances, simplifyDebts } = require("../utils/expenseSplit");
+const { buildShares } = require("../utils/expenseSplit");
 
 const logExpense = asyncHandler(async (req, res) => {
   const { description, amount, payerId, memberIds, splitType, customShares } = req.body;
@@ -89,49 +89,4 @@ const listExpenses = asyncHandler(async (req, res) => {
   res.json({ expenses: withShares });
 });
 
-const getBalances = asyncHandler(async (req, res) => {
-  const expenses = await Expense.find({ groupId: req.groupId }).populate("paidBy", "name");
-
-  const names = {};
-  const sharesByExpense = new Map();
-
-  if (expenses.length > 0) {
-    const shares = await ExpenseShare.find({
-      expenseId: { $in: expenses.map((e) => e._id) },
-    }).populate("userId", "name");
-
-    for (const share of shares) {
-      const memberId = (share.userId?._id || share.userId).toString();
-      if (share.userId?.name) names[memberId] = share.userId.name;
-
-      const key = share.expenseId.toString();
-      if (!sharesByExpense.has(key)) sharesByExpense.set(key, []);
-      sharesByExpense.get(key).push({ memberId, amountCents: share.shareAmount });
-    }
-  }
-
-  const netInput = expenses.map((expense) => {
-    const payerId = (expense.paidBy?._id || expense.paidBy).toString();
-    if (expense.paidBy?.name) names[payerId] = expense.paidBy.name;
-    return { payerId, shares: sharesByExpense.get(expense._id.toString()) || [] };
-  });
-
-  const netBalances = calculateNetBalances(netInput);
-
-  res.json({
-    balances: Object.entries(netBalances).map(([userId, amountCents]) => ({
-      userId,
-      name: names[userId] || "Unknown",
-      amountCents,
-    })),
-    settlements: simplifyDebts(netBalances).map((t) => ({
-      from: t.from,
-      fromName: names[t.from] || "Unknown",
-      to: t.to,
-      toName: names[t.to] || "Unknown",
-      amountCents: t.amountCents,
-    })),
-  });
-});
-
-module.exports = { logExpense, listExpenses, getBalances };
+module.exports = { logExpense, listExpenses };
