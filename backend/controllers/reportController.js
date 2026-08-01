@@ -18,6 +18,34 @@ const reportMessage = asyncHandler(async (req, res) => {
   res.status(201).json({ report });
 });
 
+const removeReportedMessage = asyncHandler(async (req, res) => {
+  const { reportId } = req.params;
+  const report = await Report.findById(reportId);
+  if (!report) {
+    return res.status(404).json({ error: "Report not found." });
+  }
+  const message = await Message.findById(report.messageId);
+  if (!message) {
+    return res.status(404).json({ error: "Reported message no longer exists." });
+  }
+  message.isRemoved = true;
+  await message.save();
+  report.status = "resolved";
+  await report.save();
+  await logAdminAction({
+    adminId: req.userId,
+    action: "remove_reported_message",
+    targetType: "message",
+    targetId: message._id,
+    details: `Report ${report._id}`,
+  });
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`group:${message.groupId}`).emit("message:removed", { messageId: message._id.toString() });
+  }
+  res.json({ message, report });
+});
+
 const listReports = asyncHandler(async (req, res) => {
   const { status } = req.query;
   const filter = {};
@@ -39,4 +67,5 @@ const listReports = asyncHandler(async (req, res) => {
   res.json({ reports });
 });
 
-module.exports = { reportMessage, listReports };
+
+module.exports = { reportMessage, listReports, removeReportedMessage };
