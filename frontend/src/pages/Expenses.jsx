@@ -2,13 +2,16 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import client from "../api/client";
 import GroupTabs from "../components/GroupTabs";
+import { useAuth } from "../context/AuthContext";
 
 export default function Expenses() {
   const { groupId } = useParams();
+  const { user } = useAuth();
   const [group, setGroup] = useState(null);
   const [myRole, setMyRole] = useState(null);
   const [members, setMembers] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [balances, setBalances] = useState(null);
 
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -18,20 +21,24 @@ export default function Expenses() {
   const [customShares, setCustomShares] = useState({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [expandedPair, setExpandedPair] = useState(null);
 
   function loadExpenses() {
     client.get(`/groups/${groupId}/expenses`).then((res) => setExpenses(res.data.expenses)).catch(() => {});
+  }
+
+  function loadBalances() {
+    client.get(`/groups/${groupId}/expenses/balances`).then((res) => setBalances(res.data)).catch(() => {});
   }
 
   useEffect(() => {
     client.get(`/groups/${groupId}`).then((res) => {
       setGroup(res.data.group);
       setMyRole(res.data.myRole);
-      if (res.data.myRole === "organizer") {
-        client.get(`/groups/${groupId}/members`).then((r) => setMembers(r.data.members));
-        loadExpenses();
-      }
+      client.get(`/groups/${groupId}/members`).then((r) => setMembers(r.data.members)).catch(() => {});
     });
+    loadExpenses();
+    loadBalances();
   }, [groupId]);
 
   function toggleMember(id) {
@@ -64,6 +71,7 @@ export default function Expenses() {
       await client.post(`/groups/${groupId}/expenses`, payload);
       setDescription(""); setAmount(""); setPayerId(""); setSelectedMembers([]); setCustomShares({});
       loadExpenses();
+      loadBalances();
     } catch (err) {
       setError(err.response?.data?.error || "Could not log this expense.");
     } finally {
@@ -71,20 +79,80 @@ export default function Expenses() {
     }
   }
 
-  if (myRole && myRole !== "organizer") {
-    return (
-      <div className="content-area">
-        <GroupTabs groupId={groupId} groupName={group?.name || "..."} myRole={myRole} />
-        <div className="empty-state">
-          Viewing shared expenses as a member isn't part of this release yet.
-        </div>
-      </div>
-    );
+  const myBalance = balances?.myBalance ?? 0;
+
+  function getContributingLines(fromId, toId) {
+    const lines = [];
+    for (const exp of expenses) {
+      const payerId = exp.paidBy?._id;
+      if (!payerId) continue;
+      if (payerId === toId) {
+        const share = exp.shares?.find((s) => s.userId?._id === fromId);
+        if (share) {
+          lines.push({ id: `${exp._id}-owe`, label: exp.purpose, amount: share.shareAmount / 100, direction: "owe" });
+        }
+      }
+      if (payerId === fromId) {
+        const share = exp.shares?.find((s) => s.userId?._id === toId);
+        if (share) {
+          lines.push({ id: `${exp._id}-credit`, label: exp.purpose, amount: share.shareAmount / 100, direction: "credit" });
+        }
+      }
+    }
+    return lines;
   }
 
   return (
     <div className="content-area">
       <GroupTabs groupId={groupId} groupName={group?.name || "..."} myRole={myRole} />
+
+      {balances && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="muted">Your balance</div>
+          <div style={{ fontSize: "1.4rem", fontWeight: 700, color: myBalance > 0 ? "#1a9c5e" : myBalance < 0 ? "#d0453c" : "inherit" }}>
+            {myBalance === 0 && "You're all settled up"}
+            {myBalance > 0 && `You are owed $${myBalance.toFixed(2)}`}
+            {myBalance < 0 && `You owe $${Math.abs(myBalance).toFixed(2)}`}
+          </div>
+        </div>
+      )}
+
+      <h2>Who owes who</h2>
+      {balances && balances.owes.length === 0 && <div className="empty-state">No outstanding balances.</div>}
+      <div className="card" style={{ marginBottom: 20 }}>
+        {balances && balances.owes.map((o, i) => {
+          const pairKey = `${o.fromUserId}-${o.toUserId}`;
+          const isOpen = expandedPair === pairKey;
+          const lines = isOpen ? getContributingLines(o.fromUserId, o.toUserId) : [];
+          return (
+            <div key={i}>
+              <div
+                className="list-row"
+                style={{ cursor: "pointer" }}
+                onClick={() => setExpandedPair(isOpen ? null : pairKey)}
+              >
+                <span>{isOpen ? "▾" : "▸"} {o.fromName} owes {o.toName}</span>
+                <span className="amount">${o.amount.toFixed(2)}</span>
+              </div>
+              {isOpen && (
+                <div style={{ padding: "4px 0 10px 20px", fontSize: "0.85rem" }}>
+                  {lines.length === 0 && <p className="muted">No itemized detail found.</p>}
+                  {lines.map((l) => (
+                    <div key={l.id} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0" }}>
+                      <span className="muted">
+                        {l.label} {l.direction === "credit" ? `(offsets what ${o.fromName} is owed back)` : ""}
+                      </span>
+                      <span className={l.direction === "credit" ? "muted" : ""}>
+                        {l.direction === "credit" ? "− " : ""}${l.amount.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       <h2>Recent Expenses</h2>
       {expenses.length === 0 && <div className="empty-state">No expenses logged yet.</div>}
@@ -95,60 +163,62 @@ export default function Expenses() {
         </div>
       ))}
 
-      <div className="card filled" style={{ marginTop: 20 }}>
-        <h2 style={{ color: "#fff" }}>Log Shared Expense</h2>
-        <form onSubmit={handleSubmit}>
-          <label htmlFor="amount">Amount..</label>
-          <input id="amount" type="number" min="0.01" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+      {myRole === "organizer" && (
+        <div className="card filled" style={{ marginTop: 20 }}>
+          <h2 style={{ color: "#fff" }}>Log Shared Expense</h2>
+          <form onSubmit={handleSubmit}>
+            <label htmlFor="amount">Amount..</label>
+            <input id="amount" type="number" min="0.01" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
 
-          <label htmlFor="description">Description</label>
-          <input id="description" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={200} required />
+            <label htmlFor="description">Description</label>
+            <input id="description" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={200} required />
 
-          <label htmlFor="payerId">Paid by..</label>
-          <select id="payerId" value={payerId} onChange={(e) => setPayerId(e.target.value)} required>
-            <option value="">Select who paid...</option>
-            {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-          </select>
+            <label htmlFor="payerId">Paid by..</label>
+            <select id="payerId" value={payerId} onChange={(e) => setPayerId(e.target.value)} required>
+              <option value="">Select who paid...</option>
+              {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
 
-          <label>Split Type</label>
-          <div style={{ display: "flex", gap: 16, margin: "8px 0", flexWrap: "wrap" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, margin: 0, fontWeight: 400, color: "#fff" }}>
-              <input type="radio" style={{ width: "auto" }} checked={splitType === "equal"} onChange={() => setSplitType("equal")} /> Equal
-            </label>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, margin: 0, fontWeight: 400, color: "#fff" }}>
-              <input type="radio" style={{ width: "auto" }} checked={splitType === "custom"} onChange={() => setSplitType("custom")} /> Custom
-            </label>
-          </div>
-
-          <label>Members included</label>
-          {members.map((m) => (
-            <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-              <input type="checkbox" id={`m-${m.id}`} style={{ width: "auto" }} checked={selectedMembers.includes(m.id)} onChange={() => toggleMember(m.id)} />
-              <label htmlFor={`m-${m.id}`} style={{ margin: 0, fontWeight: 400, color: "#fff" }}>{m.name}</label>
-              {splitType === "custom" && selectedMembers.includes(m.id) && (
-                <input
-                  type="number" min="0" step="0.01" placeholder="0.00"
-                  style={{ width: 100, marginLeft: "auto" }}
-                  value={customShares[m.id] || ""}
-                  onChange={(e) => setCustomShares((prev) => ({ ...prev, [m.id]: e.target.value }))}
-                />
-              )}
+            <label>Split Type</label>
+            <div style={{ display: "flex", gap: 16, margin: "8px 0", flexWrap: "wrap" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, margin: 0, fontWeight: 400, color: "#fff" }}>
+                <input type="radio" style={{ width: "auto" }} checked={splitType === "equal"} onChange={() => setSplitType("equal")} /> Equal
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, margin: 0, fontWeight: 400, color: "#fff" }}>
+                <input type="radio" style={{ width: "auto" }} checked={splitType === "custom"} onChange={() => setSplitType("custom")} /> Custom
+              </label>
             </div>
-          ))}
-          {splitType === "custom" && selectedMembers.length > 0 && (
-            <p style={{ fontSize: "0.8rem", color: "#e5e2ff" }}>
-              Custom shares so far: ${customShareTotal.toFixed(2)}{amount ? ` of $${Number(amount).toFixed(2)}` : ""}
-            </p>
-          )}
 
-          {error && <p className="error-text" style={{ color: "#ffd7d0" }}>{error}</p>}
+            <label>Members included</label>
+            {members.map((m) => (
+              <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                <input type="checkbox" id={`m-${m.id}`} style={{ width: "auto" }} checked={selectedMembers.includes(m.id)} onChange={() => toggleMember(m.id)} />
+                <label htmlFor={`m-${m.id}`} style={{ margin: 0, fontWeight: 400, color: "#fff" }}>{m.name}</label>
+                {splitType === "custom" && selectedMembers.includes(m.id) && (
+                  <input
+                    type="number" min="0" step="0.01" placeholder="0.00"
+                    style={{ width: 100, marginLeft: "auto" }}
+                    value={customShares[m.id] || ""}
+                    onChange={(e) => setCustomShares((prev) => ({ ...prev, [m.id]: e.target.value }))}
+                  />
+                )}
+              </div>
+            ))}
+            {splitType === "custom" && selectedMembers.length > 0 && (
+              <p style={{ fontSize: "0.8rem", color: "#e5e2ff" }}>
+                Custom shares so far: ${customShareTotal.toFixed(2)}{amount ? ` of $${Number(amount).toFixed(2)}` : ""}
+              </p>
+            )}
 
-          <div className="form-actions">
-            <button type="button" className="secondary" style={{ background: "transparent", color: "#fff", borderColor: "#fff" }} onClick={() => { setDescription(""); setAmount(""); setPayerId(""); setSelectedMembers([]); }}>Cancel</button>
-            <button type="submit" disabled={busy} style={{ background: "#fff", color: "var(--brand)" }}>{busy ? "Saving..." : "Save"}</button>
-          </div>
-        </form>
-      </div>
+            {error && <p className="error-text" style={{ color: "#ffd7d0" }}>{error}</p>}
+
+            <div className="form-actions">
+              <button type="button" className="secondary" style={{ background: "transparent", color: "#fff", borderColor: "#fff" }} onClick={() => { setDescription(""); setAmount(""); setPayerId(""); setSelectedMembers([]); }}>Cancel</button>
+              <button type="submit" disabled={busy} style={{ background: "#fff", color: "var(--brand)" }}>{busy ? "Saving..." : "Save"}</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

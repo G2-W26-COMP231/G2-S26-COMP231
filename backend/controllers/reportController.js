@@ -1,5 +1,5 @@
 const Message = require("../models/Message");
-const Report = require("../models/Report")
+const Report = require("../models/Report");
 const asyncHandler = require("../utils/asyncHandler");
 
 const reportMessage = asyncHandler(async (req, res) => {
@@ -46,4 +46,26 @@ const removeReportedMessage = asyncHandler(async (req, res) => {
   res.json({ message, report });
 });
 
-module.exports = { reportMessage, listReports, dismissReport, removeReportedMessage };
+const listReports = asyncHandler(async (req, res) => {
+  const { status } = req.query;
+  const filter = {};
+
+  if (status && ["open", "dismissed", "resolved"].includes(status)) {
+    filter.status = status;
+  }
+
+  const reports = await Report.find(filter)
+    .sort({ createdAt: -1 })
+    .populate("reportedBy", "name email")
+    .populate("groupId", "name")
+    .populate({
+      path: "messageId",
+      select: "content senderId isRemoved sentAt",
+      populate: { path: "senderId", select: "name email" },
+    });
+
+  res.json({ reports });
+});
+
+
+module.exports = { reportMessage, listReports, removeReportedMessage };
