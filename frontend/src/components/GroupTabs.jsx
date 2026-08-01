@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
+import MessageBell from "./MessageBell";
 
 export default function GroupTabs({ groupId, groupName, memberCount, myRole }) {
   const base = `/groups/${groupId}`;
@@ -11,7 +12,7 @@ export default function GroupTabs({ groupId, groupName, memberCount, myRole }) {
           {memberCount != null && <p className="subtitle" style={{ marginBottom: 0 }}>{memberCount} members</p>}
         </div>
         <div className="icons">
-          <span className="icon-btn" title="Chat">💬</span>
+          <MessageBell />
           <NotificationBell />
         </div>
       </div>
@@ -19,9 +20,7 @@ export default function GroupTabs({ groupId, groupName, memberCount, myRole }) {
         <NavLink to={base} end className={({ isActive }) => (isActive ? "active" : "")}>Overview</NavLink>
         <NavLink to={`${base}/chat`} className={({ isActive }) => (isActive ? "active" : "")}>Chat</NavLink>
         <NavLink to={`${base}/events`} className={({ isActive }) => (isActive ? "active" : "")}>Events</NavLink>
-        {myRole === "organizer" && (
-          <NavLink to={`${base}/expenses`} className={({ isActive }) => (isActive ? "active" : "")}>Expenses</NavLink>
-        )}
+        <NavLink to={`${base}/expenses`} className={({ isActive }) => (isActive ? "active" : "")}>Expenses</NavLink>
         <NavLink to={`${base}/members`} className={({ isActive }) => (isActive ? "active" : "")}>Members</NavLink>
       </div>
     </>

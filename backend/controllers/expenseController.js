@@ -1,3 +1,4 @@
+```js
 const mongoose = require("mongoose");
 const Membership = require("../models/Membership");
 const Expense = require("../models/Expense");
@@ -131,7 +132,9 @@ const getBalances = asyncHandler(async (req, res) => {
       toName: names[t.to] || "Unknown",
       amountCents: t.amountCents,
     })),
+    myBalance: netBalances[req.userId] || 0,
   });
 });
 
 module.exports = { logExpense, listExpenses, getBalances };
+```
