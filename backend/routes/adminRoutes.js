@@ -16,3 +16,6 @@ const { listReports, dismissReport, removeReportedMessage } = require("../contro
 const router = express.Router();
 router.use(requireAdmin);
 router.get("/overview", getModerationOverview);
+router.get("/reports", listReports);
+
+module.exports = router;

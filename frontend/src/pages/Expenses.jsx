@@ -29,9 +29,9 @@ export default function Expenses() {
       setMyRole(res.data.myRole);
       if (res.data.myRole === "organizer") {
         client.get(`/groups/${groupId}/members`).then((r) => setMembers(r.data.members));
-        loadExpenses();
       }
     });
+    loadExpenses();
   }, [groupId]);
 
   function toggleMember(id) {
@@ -71,20 +71,67 @@ export default function Expenses() {
     }
   }
 
-  if (myRole && myRole !== "organizer") {
-    return (
-      <div className="content-area">
-        <GroupTabs groupId={groupId} groupName={group?.name || "..."} myRole={myRole} />
-        <div className="empty-state">
-          Viewing shared expenses as a member isn't part of this release yet.
-        </div>
-      </div>
-    );
+   function getContributingLines(fromId, toId) {
+    const lines = [];
+    for (const exp of expenses) {
+      const payerId = exp.paidBy?._id;
+      if (!payerId) continue;
+      if (payerId === toId) {
+        const share = exp.shares?.find((s) => s.userId?._id === fromId);
+        if (share) {
+          lines.push({ id: `${exp._id}-owe`, label: exp.purpose, amount: share.shareAmount / 100, direction: "owe" });
+        }
+      }
+      if (payerId === fromId) {
+        const share = exp.shares?.find((s) => s.userId?._id === toId);
+        if (share) {
+          lines.push({ id: `${exp._id}-credit`, label: exp.purpose, amount: share.shareAmount / 100, direction: "credit" });
+        }
+      }
+    }
+    return lines;
   }
 
   return (
     <div className="content-area">
       <GroupTabs groupId={groupId} groupName={group?.name || "..."} myRole={myRole} />
+
+      <h2>Who owes who</h2>
+      {balances && balances.owes.length === 0 && <div className="empty-state">No outstanding balances.</div>}
+      <div className="card" style={{ marginBottom: 20 }}>
+        {balances && balances.owes.map((o, i) => {
+          const pairKey = `${o.fromUserId}-${o.toUserId}`;
+          const isOpen = expandedPair === pairKey;
+          const lines = isOpen ? getContributingLines(o.fromUserId, o.toUserId) : [];
+          return (
+            <div key={i}>
+              <div
+                className="list-row"
+                style={{ cursor: "pointer" }}
+                onClick={() => setExpandedPair(isOpen ? null : pairKey)}
+              >
+                <span>{isOpen ? "▾" : "▸"} {o.fromName} owes {o.toName}</span>
+                <span className="amount">${o.amount.toFixed(2)}</span>
+              </div>
+              {isOpen && (
+                <div style={{ padding: "4px 0 10px 20px", fontSize: "0.85rem" }}>
+                  {lines.length === 0 && <p className="muted">No itemized detail found.</p>}
+                  {lines.map((l) => (
+                    <div key={l.id} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0" }}>
+                      <span className="muted">
+                        {l.label} {l.direction === "credit" ? `(offsets what ${o.fromName} is owed back)` : ""}
+                      </span>
+                      <span className={l.direction === "credit" ? "muted" : ""}>
+                        {l.direction === "credit" ? "− " : ""}${l.amount.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       <h2>Recent Expenses</h2>
       {expenses.length === 0 && <div className="empty-state">No expenses logged yet.</div>}
