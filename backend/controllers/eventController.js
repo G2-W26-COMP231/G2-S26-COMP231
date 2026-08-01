@@ -61,4 +61,71 @@ const getEventRsvps = asyncHandler(async (req, res) => {
   res.json({ event, rsvps });   
 });
 
-module.exports = { createEvent, getUpcomingEvents, getEventRsvps };
+const editEvent = asyncHandler(async (req, res) => {
+  const { eventId } = req.params;
+  const event = await Event.findOne({ _id: eventId, groupId: req.groupId });
+
+  if (!event) {
+    return res.status(404).json({ error: "Event not found." });
+  }
+
+  if (event.isCancelled) {
+    return res.status(400).json({ error: "Cancelled events cannot be edited." });
+  }
+
+  const { title, location, startTime, endTime, description } = req.body;
+
+  if (title !== undefined) {
+    if (!title.trim()) return res.status(400).json({ error: "title cannot be empty." });
+    if (title.trim().length > 150) return res.status(400).json({ error: "title must be 150 characters or fewer." });
+    event.title = title.trim();
+  }
+
+  if (location !== undefined) {
+    if (!location.trim()) return res.status(400).json({ error: "location cannot be empty." });
+    if (location.trim().length > 200) return res.status(400).json({ error: "location must be 200 characters or fewer." });
+    event.location = location.trim();
+  }
+
+  let start = event.startTime;
+  if (startTime !== undefined) {
+    start = new Date(startTime);
+    if (Number.isNaN(start.getTime())) {
+      return res.status(400).json({ error: "startTime must be a valid date/time." });
+    }
+    if (start.getTime() < Date.now()) {
+      return res.status(400).json({ error: "Event date cannot be in the past." });
+    }
+    event.startTime = start;
+  }
+
+  if (endTime !== undefined) {
+    if (endTime === null || endTime === "") {
+      event.endTime = undefined;
+    } else {
+      const end = new Date(endTime);
+      if (Number.isNaN(end.getTime()) || end.getTime() < start.getTime()) {
+        return res.status(400).json({ error: "endTime must be a valid date/time on or after startTime." });
+      }
+      event.endTime = end;
+    }
+  }
+
+  if (description !== undefined) {
+    if (description.length > 1000) {
+      return res.status(400).json({ error: "description must be 1000 characters or fewer." });
+    }
+    event.description = description;
+  }
+
+  await event.save();
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`group:${req.groupId}`).emit("event:updated", event);
+  }
+
+  res.json({ event });
+});
+
+module.exports = { createEvent, getUpcomingEvents, getEventRsvps, editEvent };
