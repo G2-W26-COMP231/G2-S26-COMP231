@@ -73,4 +73,12 @@ const getGroupMembers = asyncHandler(async (req, res) => {
   res.json({ members });
 });
 
-module.exports = { createGroup, getMyGroups, getGroupWorkspace, getGroupMembers };
+const leaveGroup = asyncHandler(async (req, res) => {
+  if (req.membership.roleInGroup === "organizer") {
+    return res.status(400).json({ error: "Organizers cannot leave their own group. Delete it instead." });
+  }
+  await Membership.deleteOne({ _id: req.membership._id });
+  res.json({ left: true });
+});
+
+module.exports = { createGroup, getMyGroups, getGroupWorkspace, getGroupMembers, removeMember, leaveGroup };
