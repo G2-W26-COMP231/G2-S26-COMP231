@@ -61,4 +61,28 @@ const getEventRsvps = asyncHandler(async (req, res) => {
   res.json({ event, rsvps });   
 });
 
+const cancelEvent = asyncHandler(async (req, res) => {
+  const { eventId } = req.params;
+  const { mode } = req.query; 
+  const event = await Event.findOne({ _id: eventId, groupId: req.groupId });
+  if (!event) {
+    return res.status(404).json({ error: "Event not found." });
+  }
+
+  if (mode === "delete") {
+    await Rsvp.deleteMany({ eventId: event._id });
+    await Event.deleteOne({ _id: event._id });
+  } else {
+    event.isCancelled = true;
+    await event.save();
+  }
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`group:${req.groupId}`).emit("event:cancelled", { eventId, deleted: mode === "delete" });
+  }
+
+  res.json({ ok: true, deleted: mode === "delete" });
+});
+
 module.exports = { createEvent, getUpcomingEvents, getEventRsvps };
