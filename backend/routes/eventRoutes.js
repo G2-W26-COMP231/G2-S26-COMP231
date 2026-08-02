@@ -13,6 +13,7 @@ router.get("/", getUpcomingEvents);
 router.get("/:eventId/rsvps", requireOrganizer, getEventRsvps);
 router.get("/:eventId/rsvp", getMyRsvp);
 router.post("/:eventId/rsvp", submitRsvp);
+router.patch("/:eventId", requireOrganizer, editEvent);
 router.delete("/:eventId", requireOrganizer, cancelEvent);
 
 module.exports = router;
