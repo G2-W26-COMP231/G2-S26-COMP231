@@ -1,3 +1,4 @@
+```js
 const Invitation = require("../models/Invitation");
 const Membership = require("../models/Membership");
 const Group = require("../models/Group");
@@ -85,4 +86,22 @@ const acceptInvitation = asyncHandler(async (req, res) => {
   res.json({ groupId: invitation.groupId, invitation });
 });
 
-module.exports = { inviteMember, listPendingInvites, listMyInvitations, acceptInvitation };
+const declineInvitation = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  const invitation = await Invitation.findOne({ token });
+  if (!invitation) {
+    return res.status(404).json({ error: "This invitation link is invalid." });
+  }
+  if (invitation.status !== "pending") {
+    return res.status(409).json({ error: `This invitation was already ${invitation.status}.` });
+  }
+  if (invitation.email !== req.user.email.toLowerCase()) {
+    return res.status(403).json({ error: "This invitation was sent to a different email address." });
+  }
+  invitation.status = "declined";
+  await invitation.save();
+  res.json({ invitation });
+});
+
+module.exports = { inviteMember, listPendingInvites, listMyInvitations, acceptInvitation, declineInvitation };
+```
