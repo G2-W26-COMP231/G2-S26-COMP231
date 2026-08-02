@@ -18,6 +18,7 @@ const router = express.Router();
 router.use(requireAdmin);
 router.get("/overview", getModerationOverview);
 router.get("/reports", listReports);
+router.delete("/groups/:groupId/members/:userId", removeUserFromGroup);
 router.post("/reports/:reportId/remove-message", removeReportedMessage);
 
 module.exports = router;
