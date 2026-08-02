@@ -16,6 +16,7 @@ router.post("/", createGroup);
 router.get("/mine", getMyGroups);
 router.get("/:groupId", requireMembership, getGroupWorkspace);
 router.get("/:groupId/members", requireMembership, getGroupMembers);
+router.delete("/:groupId/members/:memberId", requireMembership, requireOrganizer, removeMember);
 router.post("/:groupId/leave", requireMembership, leaveGroup);
 
 module.exports = router;
