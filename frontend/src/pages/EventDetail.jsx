@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import client from "../api/client";
 import { getSocket } from "../socket";
 import GroupTabs from "../components/GroupTabs";
+import Modal from "../components/Modal";
 
-const RESPONSE_LABELS = { no_response: "No response", going: "Going", maybe: "Maybe", cant_make_it: "Can't make it" }; // Task 8.4 (Aadil) - M13
+const RESPONSE_LABELS = { no_response: "No response", going: "Going", maybe: "Maybe", cant_make_it: "Can't make it" };
 
 export default function EventDetail() {
   const { groupId, eventId } = useParams();
+  const navigate = useNavigate();
   const [group, setGroup] = useState(null);
   const [event, setEvent] = useState(null);
   const [myRole, setMyRole] = useState(null);
@@ -20,6 +22,8 @@ export default function EventDetail() {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ title: "", location: "", startTime: "", endTime: "", description: "" });
   const [editError, setEditError] = useState("");
+
+  const [confirmCancel, setConfirmCancel] = useState(null);
 
   useEffect(() => {
     client.get(`/groups/${groupId}`).then((res) => {
@@ -146,6 +150,25 @@ export default function EventDetail() {
     }
   }
 
+  async function handleCancelOrDelete() {
+    setBusy(true);
+    try {
+      const mode = confirmCancel === "delete" ? "?mode=delete" : "";
+      await client.delete(`/groups/${groupId}/events/${eventId}${mode}`);
+      if (confirmCancel === "delete") {
+        navigate(`/groups/${groupId}/events`);
+      } else {
+        setEvent((prev) => ({ ...prev, isCancelled: true }));
+        setConfirmCancel(null);
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || "Could not update this event.");
+      setConfirmCancel(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const filteredRsvps = rsvpData?.rsvps.filter((r) => r.response === statusFilter) || [];
   const countFor = (status) => rsvpData?.rsvps.filter((r) => r.response === status).length || 0;
 
@@ -165,8 +188,9 @@ export default function EventDetail() {
 
           {myRole === "organizer" && !event.isCancelled && (
             <div className="modal-actions" style={{ justifyContent: "flex-start", marginBottom: 16 }}>
-              {/* Table 23, Task 23.3 (Aadil) — Edit event button */}
               <button className="secondary" onClick={openEditForm}>Edit event</button>
+              <button className="danger" onClick={() => setConfirmCancel("cancel")}>Cancel event</button>
+              <button className="danger" onClick={() => setConfirmCancel("delete")}>Delete event</button>
             </div>
           )}
         </>
@@ -199,6 +223,21 @@ export default function EventDetail() {
             </div>
           </form>
         </div>
+      )}
+
+      {confirmCancel && (
+        <Modal
+          title={confirmCancel === "delete" ? "Delete this event?" : "Cancel this event?"}
+          description={
+            confirmCancel === "delete"
+              ? "This permanently deletes the event and all RSVPs. This cannot be undone."
+              : "Members will see this event marked as cancelled."
+          }
+          confirmLabel={confirmCancel === "delete" ? "Delete event" : "Cancel event"}
+          busy={busy}
+          onCancel={() => setConfirmCancel(null)}
+          onConfirm={handleCancelOrDelete}
+        />
       )}
 
       {myRole === "member" && event && !event.isCancelled && (
