@@ -73,6 +73,22 @@ const getGroupMembers = asyncHandler(async (req, res) => {
   res.json({ members });
 });
 
+const removeMember = asyncHandler(async (req, res) => {
+  const { memberId } = req.params;
+  if (memberId === req.userId) {
+    return res.status(400).json({ error: "Organizers can't remove themselves. Delete the group instead." });
+  }
+  const membership = await Membership.findOne({ groupId: req.groupId, userId: memberId });
+  if (!membership) {
+    return res.status(404).json({ error: "This person is not a member of the group." });
+  }
+  if (membership.roleInGroup === "organizer") {
+    return res.status(400).json({ error: "The organizer cannot be removed." });
+  }
+  await Membership.deleteOne({ _id: membership._id });
+  res.json({ removed: true });
+});
+
 const leaveGroup = asyncHandler(async (req, res) => {
   if (req.membership.roleInGroup === "organizer") {
     return res.status(400).json({ error: "Organizers cannot leave their own group. Delete it instead." });
