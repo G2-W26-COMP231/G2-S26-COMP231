@@ -88,6 +88,35 @@ export default function EventDetail() {
         </>
       )}
 
+      {event && editing && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <h3>Edit event</h3>
+          <form onSubmit={handleEditSubmit}>
+            <label htmlFor="edit-title">Title</label>
+            <input id="edit-title" value={editForm.title} onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))} maxLength={150} required />
+
+            <label htmlFor="edit-location">Location</label>
+            <input id="edit-location" value={editForm.location} onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))} maxLength={200} required />
+
+            <label htmlFor="edit-start">Start time</label>
+            <input id="edit-start" type="datetime-local" min={toLocalInputValue(new Date())} value={editForm.startTime} onChange={(e) => setEditForm((f) => ({ ...f, startTime: e.target.value }))} required />
+
+            <label htmlFor="edit-end">End time (optional)</label>
+            <input id="edit-end" type="datetime-local" min={editForm.startTime || undefined} value={editForm.endTime} onChange={(e) => setEditForm((f) => ({ ...f, endTime: e.target.value }))} />
+
+            <label htmlFor="edit-description">Description</label>
+            <textarea id="edit-description" value={editForm.description} onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} maxLength={1000} />
+
+            {editError && <p className="error-text">{editError}</p>}
+
+            <div className="form-actions">
+              <button type="button" className="secondary" onClick={() => setEditing(false)} disabled={busy}>Cancel</button>
+              <button type="submit" disabled={busy}>{busy ? "Saving..." : "Save changes"}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {myRole === "member" && (
         <>
           <p style={{ fontWeight: 700, color: "var(--brand)", marginTop: 20 }}>Your RSVP</p>
