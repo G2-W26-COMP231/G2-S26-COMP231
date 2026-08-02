@@ -17,6 +17,10 @@ export default function EventDetail() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ title: "", location: "", startTime: "", endTime: "", description: "" });
+  const [editError, setEditError] = useState("");
+
   useEffect(() => {
     client.get(`/groups/${groupId}`).then((res) => {
       setGroup(res.data.group);
@@ -72,6 +76,76 @@ export default function EventDetail() {
     }
   }
 
+  function toLocalInputValue(date) {
+    const d = new Date(date);
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function openEditForm() {
+    setEditForm({
+      title: event.title,
+      location: event.location,
+      startTime: toLocalInputValue(event.startTime),
+      endTime: event.endTime ? toLocalInputValue(event.endTime) : "",
+      description: event.description || "",
+    });
+    setEditError("");
+    setEditing(true);
+  }
+
+  async function handleEditSubmit(e) {
+    e.preventDefault();
+    setEditError("");
+
+    if (!editForm.title.trim()) {
+      setEditError("Title is required.");
+      return;
+    }
+    if (!editForm.location.trim()) {
+      setEditError("Location is required.");
+      return;
+    }
+    if (!editForm.startTime) {
+      setEditError("Start time is required.");
+      return;
+    }
+    const startDate = new Date(editForm.startTime);
+    if (Number.isNaN(startDate.getTime())) {
+      setEditError("Start time must be a valid date/time.");
+      return;
+    }
+    if (startDate.getTime() < Date.now()) {
+      setEditError("Event date cannot be in the past.");
+      return;
+    }
+    if (editForm.endTime) {
+      const endDate = new Date(editForm.endTime);
+      if (Number.isNaN(endDate.getTime()) || endDate.getTime() < startDate.getTime()) {
+        setEditError("End time must be on or after the start time.");
+        return;
+      }
+    }
+
+    setBusy(true);
+    try {
+      const payload = {
+        title: editForm.title,
+        location: editForm.location,
+        startTime: new Date(editForm.startTime).toISOString(),
+        endTime: editForm.endTime ? new Date(editForm.endTime).toISOString() : null,
+        description: editForm.description,
+      };
+      const res = await client.patch(`/groups/${groupId}/events/${eventId}`, payload);
+      setEvent(res.data.event);
+      setEditing(false);
+    } catch (err) {
+      setEditError(err.response?.data?.error || "Could not save these changes.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const filteredRsvps = rsvpData?.rsvps.filter((r) => r.response === statusFilter) || [];
   const countFor = (status) => rsvpData?.rsvps.filter((r) => r.response === status).length || 0;
 
@@ -79,16 +153,55 @@ export default function EventDetail() {
     <div className="content-area">
       <GroupTabs groupId={groupId} groupName={group?.name || "..."} myRole={myRole} />
 
-      {event && (
+      {event && !editing && (
         <>
-          <h3 style={{ marginBottom: 4 }}>{event.title}</h3>
+          <h3 style={{ marginBottom: 4 }}>
+            {event.title} {event.isCancelled && <span className="status-pill">Cancelled</span>}
+          </h3>
           <p className="muted">
             {new Date(event.startTime).toLocaleDateString()} & {new Date(event.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - {event.location}
           </p>
+          {event.description && <p>{event.description}</p>}
+
+          {myRole === "organizer" && !event.isCancelled && (
+            <div className="modal-actions" style={{ justifyContent: "flex-start", marginBottom: 16 }}>
+              {/* Table 23, Task 23.3 (Aadil) — Edit event button */}
+              <button className="secondary" onClick={openEditForm}>Edit event</button>
+            </div>
+          )}
         </>
       )}
 
-      {myRole === "member" && (
+      {event && editing && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <h3>Edit event</h3>
+          <form onSubmit={handleEditSubmit}>
+            <label htmlFor="edit-title">Title</label>
+            <input id="edit-title" value={editForm.title} onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))} maxLength={150} required />
+
+            <label htmlFor="edit-location">Location</label>
+            <input id="edit-location" value={editForm.location} onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))} maxLength={200} required />
+
+            <label htmlFor="edit-start">Start time</label>
+            <input id="edit-start" type="datetime-local" min={toLocalInputValue(new Date())} value={editForm.startTime} onChange={(e) => setEditForm((f) => ({ ...f, startTime: e.target.value }))} required />
+
+            <label htmlFor="edit-end">End time (optional)</label>
+            <input id="edit-end" type="datetime-local" min={editForm.startTime || undefined} value={editForm.endTime} onChange={(e) => setEditForm((f) => ({ ...f, endTime: e.target.value }))} />
+
+            <label htmlFor="edit-description">Description</label>
+            <textarea id="edit-description" value={editForm.description} onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} maxLength={1000} />
+
+            {editError && <p className="error-text">{editError}</p>}
+
+            <div className="form-actions">
+              <button type="button" className="secondary" onClick={() => setEditing(false)} disabled={busy}>Cancel</button>
+              <button type="submit" disabled={busy}>{busy ? "Saving..." : "Save changes"}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {myRole === "member" && event && !event.isCancelled && (
         <>
           <p style={{ fontWeight: 700, color: "var(--brand)", marginTop: 20 }}>Your RSVP</p>
           <div className="rsvp-choice-row">

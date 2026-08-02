@@ -14,7 +14,10 @@ const {
 } = require("../controllers/adminController");
 const { listReports, dismissReport, removeReportedMessage } = require("../controllers/reportController");
 const router = express.Router();
+
 router.use(requireAdmin);
 router.get("/overview", getModerationOverview);
+router.get("/reports", listReports);
 router.post("/reports/:reportId/remove-message", removeReportedMessage);
+
 module.exports = router;
