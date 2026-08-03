@@ -47,14 +47,17 @@ export default function Members() {
   }
 
   async function handleLeave() {
+    setError("");
     setBusy(true);
     try {
       await client.post(`/groups/${groupId}/leave`);
+      setConfirmLeave(false);
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.error || "Could not leave this group.");
       setConfirmLeave(false);
-      setBusy(false);
+      } finally {
+    setBusy(false);
     }
   }
 
