@@ -10,6 +10,17 @@ const AdminLog = require("../models/AdminLog");
 const asyncHandler = require("../utils/asyncHandler");
 const { logAdminAction } = require("../utils/adminLog");
 
+const listUsers = asyncHandler(async (req, res) => {
+  const { search } = req.query;
+  const filter = {};
+  if (search && search.trim()) {
+    const re = new RegExp(search.trim(), "i");
+    filter.$or = [{ name: re }, { email: re }];
+  }
+  const users = await User.find(filter).sort({ createdAt: -1 });
+  res.json({ users });
+});
+
 const removeUserFromGroup = asyncHandler(async (req, res) => {
   const { groupId, userId } = req.params;
   const group = await Group.findById(groupId);
@@ -48,3 +59,9 @@ const getModerationOverview = asyncHandler(async (req, res) => {
     recentReports,
   });
 });
+
+module.exports = {
+  listUsers,
+  removeUserFromGroup,
+  getModerationOverview,
+};
