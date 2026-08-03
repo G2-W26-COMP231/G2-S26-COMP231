@@ -8,6 +8,7 @@ const { groupInvitationRouter, acceptInvitationRouter } = require("./routes/invi
 const eventRoutes = require("./routes/eventRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 function createApp() {
   const app = express();
@@ -23,6 +24,7 @@ function createApp() {
   app.use("/api/groups/:groupId/events", eventRoutes);
   app.use("/api/groups/:groupId/messages", messageRoutes);
   app.use("/api/groups/:groupId/expenses", expenseRoutes);
+  app.use("/api/notifications", notificationRoutes);
 
   app.use("/api", (req, res) => res.status(404).json({ error: "Not found." }));
 
