@@ -8,6 +8,8 @@ export default function AdminUserDetail() {
   const { userId } = useParams();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [confirmBan, setConfirmBan] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   function load() {
     client
@@ -15,8 +17,22 @@ export default function AdminUserDetail() {
       .then((res) => setData(res.data))
       .catch((err) => setError(err.response?.data?.error || "Could not load this user."));
   }
-
   useEffect(load, [userId]);
+
+  async function toggleStatus() {
+    setBusy(true);
+    try {
+      const nextStatus = data.user.status === "banned" ? "active" : "banned";
+      await client.patch(`/admin/users/${userId}/status`, { status: nextStatus });
+      setConfirmBan(false);
+      load();
+    } catch (err) {
+      setError(err.response?.data?.error || "Could not update this user's status.");
+      setConfirmBan(false);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="content-area">
