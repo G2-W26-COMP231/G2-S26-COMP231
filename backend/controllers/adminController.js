@@ -21,6 +21,33 @@ const listUsers = asyncHandler(async (req, res) => {
   res.json({ users });
 });
 
+const setUserStatus = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const { status } = req.body;
+  if (!["active", "banned"].includes(status)) {
+    return res.status(400).json({ error: "status must be 'active' or 'banned'." });
+  }
+  if (userId === req.userId) {
+    return res.status(400).json({ error: "You cannot change your own account status." });
+  }
+  const user = await User.findById(userId);
+  if (!user) {
+    return res.status(404).json({ error: "User not found." });
+  }
+  user.status = status;
+  await user.save();
+
+  await logAdminAction({
+    adminId: req.userId,
+    action: status === "banned" ? "ban_user" : "reactivate_user",
+    targetType: "user",
+    targetId: user._id,
+    details: `${user.email}`,
+  });
+
+  res.json({ user });
+});
+
 const removeUserFromGroup = asyncHandler(async (req, res) => {
   const { groupId, userId } = req.params;
   const group = await Group.findById(groupId);
@@ -62,6 +89,7 @@ const getModerationOverview = asyncHandler(async (req, res) => {
 
 module.exports = {
   listUsers,
+  setUserStatus,
   removeUserFromGroup,
   getModerationOverview,
 };
