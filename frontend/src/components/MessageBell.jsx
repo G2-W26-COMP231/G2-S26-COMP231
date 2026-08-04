@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import client from "../api/client";
 
 function timeAgo(dateStr) {
   const diffMs = Date.now() - new Date(dateStr).getTime();
@@ -12,7 +14,19 @@ function timeAgo(dateStr) {
 
 export default function MessageBell() {
   const [open, setOpen] = useState(false);
-  const [messages] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const navigate = useNavigate();
+
+  function load() {
+    client.get("/notifications/messages").then((res) => setMessages(res.data.messages)).catch(() => {});
+  }
+
+  useEffect(() => { load(); }, []);
+
+  function goToMessage(groupId) {
+    setOpen(false);
+    navigate(`/groups/${groupId}/chat`);
+  }
 
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
@@ -46,7 +60,12 @@ export default function MessageBell() {
           <div className="notif-header">Recent messages</div>
           {messages.length === 0 && <div className="notif-item muted">No recent messages.</div>}
           {messages.map((m) => (
-            <div className="notif-item" key={m._id} style={{ cursor: "pointer" }}>
+            <div
+              className="notif-item"
+              key={m._id}
+              style={{ cursor: "pointer" }}
+              onClick={() => goToMessage(m.groupId?._id)}
+            >
               <div>
                 <strong>{m.senderId?.name || "Someone"}</strong> in <strong>{m.groupId?.name || "a group"}</strong>
               </div>
