@@ -17,6 +17,7 @@ const router = express.Router();
 
 router.use(requireAdmin);
 router.get("/overview", getModerationOverview);
+router.get("/logs", getAdminLogs);
 router.get("/users", listUsers);
 router.patch("/users/:userId/status", setUserStatus);
 router.get("/reports", listReports);
