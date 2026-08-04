@@ -17,6 +17,12 @@ import Expenses from "./pages/Expenses";
 import Members from "./pages/Members";
 import Profile from "./pages/Profile";
 
+import AdminOverview from "./pages/admin/AdminOverview";
+import AdminReports from "./pages/admin/AdminReports";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUserDetail from "./pages/admin/AdminUserDetail";
+import AdminGroupDetail from "./pages/admin/AdminGroupDetail";
+
 export default function App() {
   return (
     <div className="app-layout">
