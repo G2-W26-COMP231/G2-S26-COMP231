@@ -1,6 +1,7 @@
 const Message = require("../models/Message");
 const Report = require("../models/Report");
 const asyncHandler = require("../utils/asyncHandler");
+const { logAdminAction } = require("../utils/adminLog");
 
 const reportMessage = asyncHandler(async (req, res) => {
   const { messageId } = req.params;
