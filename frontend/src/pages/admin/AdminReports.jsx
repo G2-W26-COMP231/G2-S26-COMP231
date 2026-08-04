@@ -21,6 +21,7 @@ export default function AdminReports() {
 
   async function handleConfirm() {
     if (!confirmTarget) return;
+    setError("");
     setBusy(true);
     try {
       if (confirmTarget.type === "dismiss") {
@@ -41,7 +42,6 @@ export default function AdminReports() {
   return (
     <div className="content-area">
       <AdminTabs />
-      
       <div className="tabs" style={{ marginBottom: 12 }}>
         {["open", "resolved", "dismissed", ""].map((s) => (
           <span
