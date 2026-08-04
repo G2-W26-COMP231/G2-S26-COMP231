@@ -1,4 +1,3 @@
-```js
 const Invitation = require("../models/Invitation");
 const Membership = require("../models/Membership");
 const Group = require("../models/Group");
@@ -104,4 +103,3 @@ const declineInvitation = asyncHandler(async (req, res) => {
 });
 
 module.exports = { inviteMember, listPendingInvites, listMyInvitations, acceptInvitation, declineInvitation };
-```

@@ -68,6 +68,17 @@ const removeUserFromGroup = asyncHandler(async (req, res) => {
   res.json({ removed: true });
 });
 
+const listGroups = asyncHandler(async (req, res) => {
+  const groups = await Group.find().populate("organizerId", "name email").sort({ createdAt: -1 });
+  const withCounts = await Promise.all(
+    groups.map(async (g) => ({
+      ...g.toObject(),
+      memberCount: await Membership.countDocuments({ groupId: g._id }),
+    }))
+  );
+  res.json({ groups: withCounts });
+});
+
 const getModerationOverview = asyncHandler(async (req, res) => {
   const [openReports, totalReports, bannedUsers, totalUsers, totalGroups] = await Promise.all([
     Report.countDocuments({ status: "open" }),
@@ -91,5 +102,6 @@ module.exports = {
   listUsers,
   setUserStatus,
   removeUserFromGroup,
-  getModerationOverview,
+  listGroups,
+  getModerationOverview
 };
