@@ -20,6 +20,7 @@ router.get("/overview", getModerationOverview);
 router.get("/users", listUsers);
 router.get("/reports", listReports);
 router.delete("/groups/:groupId/members/:userId", removeUserFromGroup);
+router.post("/reports/:reportId/dismiss", dismissReport);
 router.post("/reports/:reportId/remove-message", removeReportedMessage);
 
 module.exports = router;
