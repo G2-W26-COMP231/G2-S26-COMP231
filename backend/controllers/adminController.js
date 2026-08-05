@@ -141,11 +141,21 @@ const getModerationOverview = asyncHandler(async (req, res) => {
   });
 });
 
+const getAdminLogs = asyncHandler(async (req, res) => {
+  const { limit = 50 } = req.query;
+  const logs = await AdminLog.find()
+    .sort({ createdAt: -1 })
+    .limit(Math.min(Number(limit) || 50, 200))
+    .populate("adminId", "name email");
+  res.json({ logs });
+});
+
 module.exports = {
   listUsers,
   setUserStatus,
   removeUserFromGroup,
+  getModerationOverview,
+  getAdminLogs,
   deleteGroup,
-  listGroups,
-  getModerationOverview
+  listGroups
 };
