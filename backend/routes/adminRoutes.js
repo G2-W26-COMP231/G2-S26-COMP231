@@ -19,6 +19,7 @@ router.use(requireAdmin);
 router.get("/overview", getModerationOverview);
 router.get("/logs", getAdminLogs);
 router.get("/users", listUsers);
+router.get("/users/:userId", getUserProfile);
 router.get("/groups", listGroups);
 router.get("/groups/:groupId", getGroupDetails);
 router.patch("/users/:userId/status", setUserStatus);
