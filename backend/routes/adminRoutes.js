@@ -20,6 +20,7 @@ router.get("/overview", getModerationOverview);
 router.get("/logs", getAdminLogs);
 router.get("/users", listUsers);
 router.get("/groups", listGroups);
+router.get("/groups/:groupId", getGroupDetails);
 router.patch("/users/:userId/status", setUserStatus);
 router.get("/reports", listReports);
 router.delete("/groups/:groupId", deleteGroup);

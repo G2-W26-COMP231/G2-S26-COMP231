@@ -111,6 +111,8 @@ const deleteGroup = asyncHandler(async (req, res) => {
   });
 
   res.json({ deleted: true });
+});
+
 const listGroups = asyncHandler(async (req, res) => {
   const groups = await Group.find().populate("organizerId", "name email").sort({ createdAt: -1 });
   const withCounts = await Promise.all(
@@ -120,6 +122,22 @@ const listGroups = asyncHandler(async (req, res) => {
     }))
   );
   res.json({ groups: withCounts });
+});
+
+const getGroupDetails = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+  const group = await Group.findById(groupId).populate("organizerId", "name email");
+  if (!group) {
+    return res.status(404).json({ error: "Group not found." });
+  }
+  const [memberCount, eventCount, messageCount, expenseCount, reportCount] = await Promise.all([
+    Membership.countDocuments({ groupId }),
+    Event.countDocuments({ groupId }),
+    Message.countDocuments({ groupId }),
+    Expense.countDocuments({ groupId }),
+    Report.countDocuments({ groupId }),
+  ]);
+  res.json({ group, summary: { memberCount, eventCount, messageCount, expenseCount, reportCount } });
 });
 
 const getModerationOverview = asyncHandler(async (req, res) => {
@@ -157,5 +175,6 @@ module.exports = {
   getModerationOverview,
   getAdminLogs,
   deleteGroup,
-  listGroups
+  listGroups,
+  getGroupDetails
 };
