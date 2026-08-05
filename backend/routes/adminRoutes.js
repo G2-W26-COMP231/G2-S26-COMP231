@@ -18,6 +18,7 @@ const router = express.Router();
 router.use(requireAdmin);
 router.get("/overview", getModerationOverview);
 router.get("/users", listUsers);
+router.get("/groups", listGroups);
 router.patch("/users/:userId/status", setUserStatus);
 router.get("/reports", listReports);
 router.delete("/groups/:groupId", deleteGroup);
