@@ -1,3 +1,4 @@
+```js
 const mongoose = require("mongoose");
 const User = require("../models/User");
 const Group = require("../models/Group");
@@ -154,6 +155,26 @@ const getGroupDetails = asyncHandler(async (req, res) => {
   res.json({ group, summary: { memberCount, eventCount, messageCount, expenseCount, reportCount } });
 });
 
+const getGroupMembers = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+  const memberships = await Membership.find({ groupId })
+    .populate("userId", "name email status")
+    .sort({ roleInGroup: 1 });
+
+  const members = memberships
+    .filter((m) => m.userId)
+    .map((m) => ({
+      id: m.userId._id,
+      name: m.userId.name,
+      email: m.userId.email,
+      status: m.userId.status,
+      role: m.roleInGroup,
+      joinedAt: m.joinedAt,
+    }));
+
+  res.json({ members });
+});
+
 const getModerationOverview = asyncHandler(async (req, res) => {
   const [openReports, totalReports, bannedUsers, totalUsers, totalGroups] = await Promise.all([
     Report.countDocuments({ status: "open" }),
@@ -191,5 +212,7 @@ module.exports = {
   getAdminLogs,
   deleteGroup,
   listGroups,
-  getGroupDetails
+  getGroupDetails,
+  getGroupMembers
 };
+```
