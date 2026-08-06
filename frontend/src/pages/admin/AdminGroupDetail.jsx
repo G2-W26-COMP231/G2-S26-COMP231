@@ -51,7 +51,7 @@ export default function AdminGroupDetail() {
               </div>
               <button className="danger" onClick={() => setConfirmDeleteGroup(true)}>Delete group</button>
             </div>
-            <p style={{ whiteSpace: "pre-wrap" }}> {details.group.description || <span className="muted">No description.</span>}</p>
+            <p>{details.group.description || <span className="muted">No description.</span>}</p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: "0.85rem" }}>
               <span>{details.summary.memberCount} members</span>
               <span>{details.summary.eventCount} events</span>
