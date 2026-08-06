@@ -1,3 +1,4 @@
+```js
 const express = require("express");
 const requireAdmin = require("../middleware/requireAdmin");
 const {
@@ -22,6 +23,7 @@ router.get("/users", listUsers);
 router.get("/users/:userId", getUserProfile);
 router.get("/groups", listGroups);
 router.get("/groups/:groupId", getGroupDetails);
+router.get("/groups/:groupId/members", getGroupMembers);
 router.patch("/users/:userId/status", setUserStatus);
 router.get("/reports", listReports);
 router.delete("/groups/:groupId", deleteGroup);
@@ -30,3 +32,4 @@ router.post("/reports/:reportId/dismiss", dismissReport);
 router.post("/reports/:reportId/remove-message", removeReportedMessage);
 
 module.exports = router;
+```
