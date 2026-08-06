@@ -21,6 +21,20 @@ const listUsers = asyncHandler(async (req, res) => {
   res.json({ users });
 });
 
+const getUserProfile = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const user = await User.findById(userId);
+  if (!user) {
+    return res.status(404).json({ error: "User not found." });
+  }
+  const memberships = await Membership.find({ userId }).populate("groupId", "name status");
+  const groups = memberships
+    .filter((m) => m.groupId)
+    .map((m) => ({ id: m.groupId._id, name: m.groupId.name, status: m.groupId.status, roleInGroup: m.roleInGroup }));
+
+  res.json({ user, groups });
+});
+
 const setUserStatus = asyncHandler(async (req, res) => {
   const { userId } = req.params;
   const { status } = req.body;
@@ -111,6 +125,8 @@ const deleteGroup = asyncHandler(async (req, res) => {
   });
 
   res.json({ deleted: true });
+});
+
 const listGroups = asyncHandler(async (req, res) => {
   const groups = await Group.find().populate("organizerId", "name email").sort({ createdAt: -1 });
   const withCounts = await Promise.all(
@@ -120,6 +136,22 @@ const listGroups = asyncHandler(async (req, res) => {
     }))
   );
   res.json({ groups: withCounts });
+});
+
+const getGroupDetails = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+  const group = await Group.findById(groupId).populate("organizerId", "name email");
+  if (!group) {
+    return res.status(404).json({ error: "Group not found." });
+  }
+  const [memberCount, eventCount, messageCount, expenseCount, reportCount] = await Promise.all([
+    Membership.countDocuments({ groupId }),
+    Event.countDocuments({ groupId }),
+    Message.countDocuments({ groupId }),
+    Expense.countDocuments({ groupId }),
+    Report.countDocuments({ groupId }),
+  ]);
+  res.json({ group, summary: { memberCount, eventCount, messageCount, expenseCount, reportCount } });
 });
 
 const getModerationOverview = asyncHandler(async (req, res) => {
@@ -152,10 +184,12 @@ const getAdminLogs = asyncHandler(async (req, res) => {
 
 module.exports = {
   listUsers,
+  getUserProfile,
   setUserStatus,
   removeUserFromGroup,
   getModerationOverview,
   getAdminLogs,
   deleteGroup,
-  listGroups
+  listGroups,
+  getGroupDetails
 };
