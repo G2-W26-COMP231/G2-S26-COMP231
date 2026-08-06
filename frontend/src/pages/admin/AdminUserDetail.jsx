@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import client from "../../api/client";
 import AdminTabs from "./AdminTabs";
 import Modal from "../../components/Modal";
@@ -17,6 +17,7 @@ export default function AdminUserDetail() {
       .then((res) => setData(res.data))
       .catch((err) => setError(err.response?.data?.error || "Could not load this user."));
   }
+
   useEffect(load, [userId]);
 
   async function toggleStatus() {
@@ -40,19 +41,39 @@ export default function AdminUserDetail() {
       {error && <p className="error-text">{error}</p>}
       {!data && !error && <p className="muted">Loading...</p>}
       {data && (
-        <div className="card">
-          <h2 style={{ marginTop: 0 }}>{data.user.name}</h2>
-          <p className="muted">{data.user.email}</p>
-          <p>
-            Status: <span className="status-pill">{data.user.status}</span>{" "}
-            {data.user.role === "admin" && <span className="role-badge">Admin</span>}
-          </p>
-          <button className="danger" onClick={() => setConfirmBan(true)}>
-            {data.user.status === "banned" ? "Reactivate account" : "Deactivate / ban account"}
-          </button>
-        </div>
-      )}
+        <>
+          <div className="card">
+            <h2 style={{ marginTop: 0 }}>{data.user.name}</h2>
+            <p className="muted">{data.user.email}</p>
+            <p>
+              Status: <span className="status-pill">{data.user.status}</span>{" "}
+              {data.user.role === "admin" && <span className="role-badge">Admin</span>}
+            </p>
+            <p className="muted" style={{ fontSize: "0.85rem" }}>
+              Joined {new Date(data.user.createdAt).toLocaleDateString()}
+            </p>
+            <button className="danger" onClick={() => setConfirmBan(true)}>
+              {data.user.status === "banned" ? "Reactivate account" : "Deactivate / ban account"}
+            </button>
+          </div>
 
+          <h2 style={{ marginTop: 24 }}>Group memberships</h2>
+          {data.groups.length === 0 && <div className="empty-state">Not a member of any groups.</div>}
+          <div className="card">
+            {data.groups.map((g) => (
+              <div className="list-row" key={g.id}>
+                <span>{g.name}</span>
+                <span style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <span className="role-badge">{g.roleInGroup}</span>
+                  <Link to={`/admin/groups/${g.id}`}>
+                    <button className="secondary">View group</button>
+                  </Link>
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       {confirmBan && (
         <Modal
           title={data.user.status === "banned" ? "Reactivate this account?" : "Deactivate this account?"}
