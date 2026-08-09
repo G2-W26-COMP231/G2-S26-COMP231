@@ -22,7 +22,6 @@ export default function EventDetail() {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ title: "", location: "", startTime: "", endTime: "", description: "" });
   const [editError, setEditError] = useState("");
-
   const [confirmCancel, setConfirmCancel] = useState(null);
 
   useEffect(() => {

@@ -2,6 +2,10 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+/**
+ * Displays the login form for existing users.
+ * After a successful login, the user is redirected to the dashboard.
+ */
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();

@@ -8,8 +8,17 @@ const { groupInvitationRouter, acceptInvitationRouter } = require("./routes/invi
 const eventRoutes = require("./routes/eventRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 
+/**
+ * Builds the express app - sets up cors, json parsing, and mounts every
+ * route. requireAuth runs before all the /api routes except /api/auth,
+ * since you obviously can't be logged in yet to hit register/login.
+ * Also has a catch-all 404 and an error handler at the bottom.
+ *
+ * @returns {Object} the configured express app
+ */
 function createApp() {
   const app = express();
 
@@ -24,8 +33,10 @@ function createApp() {
   app.use("/api/groups/:groupId/events", eventRoutes);
   app.use("/api/groups/:groupId/messages", messageRoutes);
   app.use("/api/groups/:groupId/expenses", expenseRoutes);
+  app.use("/api/admin", adminRoutes);
   app.use("/api/notifications", notificationRoutes);
 
+  
   app.use("/api", (req, res) => res.status(404).json({ error: "Not found." }));
 
   app.use((err, req, res, next) => {

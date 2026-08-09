@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+/** Join table linking a User to a Group with their role in it. */
 const membershipSchema = new mongoose.Schema(
   {
     groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group", required: true },
@@ -10,7 +11,6 @@ const membershipSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// A user can only have one membership record per group.
 membershipSchema.index({ groupId: 1, userId: 1 }, { unique: true });
 
 module.exports = mongoose.model("Membership", membershipSchema);

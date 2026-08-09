@@ -1,6 +1,19 @@
 const Message = require("../models/Message");
 const asyncHandler = require("../utils/asyncHandler");
 
+/**
+ * Shared helper that actually saves a message and sends it out over
+ * socket.io to everyone in the group. Both the socket "send message" event
+ * and the plain REST endpoint below call this so we don't duplicate the
+ * validation/save logic in two places.
+ *
+ * @param {Object} params
+ * @param {string} params.groupId
+ * @param {string} params.senderId
+ * @param {string} params.body - the raw message text
+ * @param {Object} params.io - the socket.io server instance, or null if not available
+ * @returns {Promise<Object>} the saved message, populated with sender info
+ */
 async function persistAndBroadcast({ groupId, senderId, body, io }) {
   const trimmed = (body || "").trim();
   if (!trimmed) {
@@ -21,6 +34,13 @@ async function persistAndBroadcast({ groupId, senderId, body, io }) {
   return populated;
 }
 
+/**
+ * REST fallback for sending a message, in case the socket connection isn't
+ * working for some reason. Just calls persistAndBroadcast under the hood.
+ *
+ * @param {Object} req - needs body.body (the message text)
+ * @param {Object} res
+ */
 const sendMessage = asyncHandler(async (req, res) => {
   try {
     const message = await persistAndBroadcast({
@@ -36,6 +56,14 @@ const sendMessage = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * Gets a page of message history for a group. Supports "before" (load older
+ * messages, for scrolling up) and "after" (catch up on new messages after
+ * reconnecting). If neither is given it just returns the most recent page.
+ *
+ * @param {Object} req - query params: before, after, limit
+ * @param {Object} res
+ */
 const getMessageHistory = asyncHandler(async (req, res) => {
   const { before, after, limit = 30 } = req.query;
   const pageSize = Math.min(Number(limit) || 30, 100);

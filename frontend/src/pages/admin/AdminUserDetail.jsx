@@ -4,6 +4,11 @@ import client from "../../api/client";
 import AdminTabs from "./AdminTabs";
 import Modal from "../../components/Modal";
 
+/**
+ * Admin's view of one user - their profile info, a ban/reactivate button,
+ * and every group they're a member of. The ban action goes through a
+ * confirm modal.
+ */
 export default function AdminUserDetail() {
   const { userId } = useParams();
   const [data, setData] = useState(null);

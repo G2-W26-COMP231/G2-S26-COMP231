@@ -3,6 +3,10 @@ import { Link, useParams } from "react-router-dom";
 import client from "../api/client";
 import GroupTabs from "../components/GroupTabs";
 
+/** 
+ * Displays the upcoming events for the selected group. 
+ * Organizers can also create a new event from this page. 
+*/
 export default function Events() {
   const { groupId } = useParams();
   const [group, setGroup] = useState(null);

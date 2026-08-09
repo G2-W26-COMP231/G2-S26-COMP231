@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+/**
+ * One member's RSVP for one event. Gets auto-created as "no_response"
+ * when the event is made, then updated once they actually respond.
+ */
 const rsvpSchema = new mongoose.Schema(
   {
     eventId: { type: mongoose.Schema.Types.ObjectId, ref: "Event", required: true },

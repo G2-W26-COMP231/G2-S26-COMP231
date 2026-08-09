@@ -6,11 +6,19 @@ import { useAuth } from "../context/AuthContext";
 import GroupTabs from "../components/GroupTabs";
 import Modal from "../components/Modal";
 
+/** 
+ * Converts the message date into an easier format to read. 
+ * This is used to separate chat messages by date. 
+*/
 function dayLabel(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
 }
 
+/** 
+ * Displays the group chat where members can send and receive messages.
+ * It also handles real-time messages, loading older messages, and reporting messages.
+*/
 export default function Chat() {
   const { groupId } = useParams();
   const { user } = useAuth();
@@ -22,8 +30,8 @@ export default function Chat() {
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
   const [reportedIds, setReportedIds] = useState(new Set());
-  const [menuFor, setMenuFor] = useState(null); // message id with context menu open
-  const [confirmReport, setConfirmReport] = useState(null); // message pending report confirmation
+  const [menuFor, setMenuFor] = useState(null);
+  const [confirmReport, setConfirmReport] = useState(null);
   const [reportBusy, setReportBusy] = useState(false);
   const logRef = useRef(null);
 

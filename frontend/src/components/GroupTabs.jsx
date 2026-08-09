@@ -2,6 +2,17 @@ import { NavLink } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
 import MessageBell from "./MessageBell";
 
+/**
+ * The header + tab bar that sits at the top of every group page (Overview,
+ * Chat, Events, Expenses, Members). Just needs the group's id/name so it
+ * can build the right links.
+ *
+ * @param {Object} props
+ * @param {string} props.groupId
+ * @param {string} props.groupName
+ * @param {number} [props.memberCount] - shown under the title if given
+ * @param {string} [props.myRole]
+ */
 export default function GroupTabs({ groupId, groupName, memberCount, myRole }) {
   const base = `/groups/${groupId}`;
   return (

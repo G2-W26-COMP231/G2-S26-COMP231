@@ -3,6 +3,14 @@ const User = require("../models/User");
 const Membership = require("../models/Membership");
 const { persistAndBroadcast } = require("../controllers/messageController");
 
+/**
+ * Sets up the socket.io server for live chat. Checks the JWT on connect
+ * (same as the regular requireAuth middleware, just done manually since
+ * sockets don't go through express middleware), then handles joining/
+ * leaving a group's chat room and sending messages live.
+ *
+ * @param {Object} io - the socket.io server instance
+ */
 function initChatSocket(io) {
   io.use(async (socket, next) => {
     try {

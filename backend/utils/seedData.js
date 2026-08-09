@@ -10,6 +10,7 @@ const Invitation = require("../models/Invitation");
 
 const DEMO_PASSWORD = "Demo1234!";
 
+/** Wipes every collection this app uses, so seeding always starts from a clean slate. */
 async function wipeAllCollections() {
   await Promise.all([
     User.deleteMany({}),
@@ -24,6 +25,16 @@ async function wipeAllCollections() {
   ]);
 }
 
+/**
+ * Fills the database with fake demo data - 6 users, 2 groups, events with
+ * RSVPs, a chat history, some expenses with both equal and custom splits,
+ * and a pending invite. Used for local dev/testing and for the demo itself
+ * so there's actually something to show.
+ *
+ * @param {Object} [options]
+ * @param {boolean} [options.wipeFirst] - if true, clears all collections before seeding
+ * @param {Function} [options.log] - logging function, defaults to console.log
+ */
 async function seedDatabase({ wipeFirst = true, log = console.log } = {}) {
   if (wipeFirst) {
     log("Wiping existing data...");
@@ -201,7 +212,7 @@ async function seedDatabase({ wipeFirst = true, log = console.log } = {}) {
     { expenseId: expense3._id, userId: aadil._id, shareAmount: 2500 },
     { expenseId: expense3._id, userId: dang._id, shareAmount: 2000 },
     { expenseId: expense3._id, userId: czarina._id, shareAmount: 2000 }, 
-  ]); //matches the total exactly
+  ]); 
 
   log("Creating a pending invitation (not yet accepted)...");
   await Invitation.create({

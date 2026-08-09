@@ -4,6 +4,10 @@ import client from "../api/client";
 import GroupTabs from "../components/GroupTabs";
 import { useAuth } from "../context/AuthContext";
 
+/**
+ * Displays the group's shared expenses and current balances.
+ * It also shows who owes who and allows organizers to add new expenses.
+ */
 export default function Expenses() {
   const { groupId } = useParams();
   const { user } = useAuth();
@@ -21,7 +25,6 @@ export default function Expenses() {
   const [customShares, setCustomShares] = useState({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [expandedPair, setExpandedPair] = useState(null);
 
   function loadExpenses() {
     client.get(`/groups/${groupId}/expenses`).then((res) => setExpenses(res.data.expenses)).catch(() => {});
@@ -37,6 +40,7 @@ export default function Expenses() {
       setMyRole(res.data.myRole);
       client.get(`/groups/${groupId}/members`).then((r) => setMembers(r.data.members)).catch(() => {});
     });
+    // M16: shared expenses are visible to every member, not just the organizer.
     loadExpenses();
     loadBalances();
   }, [groupId]);
@@ -80,6 +84,8 @@ export default function Expenses() {
   }
 
   const myBalance = balances?.myBalance ?? 0;
+  const balanceState = myBalance === 0 ? "settled" : myBalance > 0 ? "positive" : "negative";
+  const [expandedPair, setExpandedPair] = useState(null);
 
   function getContributingLines(fromId, toId) {
     const lines = [];
@@ -107,12 +113,17 @@ export default function Expenses() {
       <GroupTabs groupId={groupId} groupName={group?.name || "..."} myRole={myRole} />
 
       {balances && (
-        <div className="card" style={{ marginBottom: 16 }}>
-          <div className="muted">Your balance</div>
-          <div style={{ fontSize: "1.4rem", fontWeight: 700, color: myBalance > 0 ? "#1a9c5e" : myBalance < 0 ? "#d0453c" : "inherit" }}>
-            {myBalance === 0 && "You're all settled up"}
-            {myBalance > 0 && `You are owed $${myBalance.toFixed(2)}`}
-            {myBalance < 0 && `You owe $${Math.abs(myBalance).toFixed(2)}`}
+        <div className={`balance-card balance-card-${balanceState}`} style={{ marginBottom: 16 }}>
+          <div className="balance-card-icon">
+            {balanceState === "settled" ? "✓" : balanceState === "positive" ? "↑" : "↓"}
+          </div>
+          <div>
+            <div className="muted">Your balance</div>
+            <div className="balance-card-amount">
+              {myBalance === 0 && "You're all settled up"}
+              {myBalance > 0 && `You are owed $${myBalance.toFixed(2)}`}
+              {myBalance < 0 && `You owe $${Math.abs(myBalance).toFixed(2)}`}
+            </div>
           </div>
         </div>
       )}
@@ -131,11 +142,14 @@ export default function Expenses() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setExpandedPair(isOpen ? null : pairKey)}
               >
-                <span>{isOpen ? "▾" : "▸"} {o.fromName} owes {o.toName}</span>
-                <span className="amount">${o.amount.toFixed(2)}</span>
+                <span>
+                  <span className={`expand-caret ${isOpen ? "open" : ""}`}>▸</span>
+                  {o.fromName} owes {o.toName}
+                </span>
+                <span className="amount-pill">${o.amount.toFixed(2)}</span>
               </div>
               {isOpen && (
-                <div style={{ padding: "4px 0 10px 20px", fontSize: "0.85rem" }}>
+                <div style={{ padding: "4px 0 10px 30px", fontSize: "0.85rem" }}>
                   {lines.length === 0 && <p className="muted">No itemized detail found.</p>}
                   {lines.map((l) => (
                     <div key={l.id} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0" }}>
@@ -158,7 +172,10 @@ export default function Expenses() {
       {expenses.length === 0 && <div className="empty-state">No expenses logged yet.</div>}
       {expenses.map((exp) => (
         <div className="expense-row-card filled" key={exp._id}>
-          <span>{exp.purpose}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="expense-row-icon">💸</div>
+            <span>{exp.purpose}</span>
+          </div>
           <span className="amount">Paid by {exp.paidBy?.name || "Unknown"} - ${(exp.amount / 100).toFixed(2)}</span>
         </div>
       ))}

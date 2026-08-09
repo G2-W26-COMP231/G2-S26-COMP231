@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import client from "../../api/client";
 import AdminTabs from "./AdminTabs";
 
+/** Admin's list of every user in the system, with a search box (name or email) and a View button on each. */
 export default function AdminUsers() {
   const [users, setUsers] = useState(null);
   const [search, setSearch] = useState("");

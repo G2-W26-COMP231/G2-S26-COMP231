@@ -2,6 +2,14 @@ const sgMail = require("@sendgrid/mail");
 
 let configured = false;
 
+/**
+ * Sets up the SendGrid API key the first time it's actually needed, so we
+ * don't crash on startup if it's not configured yet - just falls back to
+ * logging the invite link to the console instead. Only runs the setup once
+ * (the `configured` flag caches that).
+ *
+ * @returns {boolean} true if SendGrid is ready to use, false if no API key was found
+ */
 function ensureConfigured() {
   if (configured) return true;
   const apiKey = process.env.SENDGRID_API_KEY;

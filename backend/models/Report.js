@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+/** A report filed against a message. Goes from open -> dismissed or resolved. */
 const reportSchema = new mongoose.Schema(
   {
     messageId: { type: mongoose.Schema.Types.ObjectId, ref: "Message", required: true },

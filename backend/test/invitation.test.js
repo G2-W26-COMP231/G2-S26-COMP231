@@ -1,3 +1,4 @@
+/** Tests for inviteMember and acceptInvitation - the invite flow validation. */
 const test = require("node:test");
 const assert = require("node:assert");
 

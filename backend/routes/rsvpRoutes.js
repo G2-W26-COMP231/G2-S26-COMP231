@@ -1,11 +1,11 @@
 const express = require("express");
 const requireMembership = require("../middleware/requireMembership");
-const { submitRsvp, getMyRsvp } = require("../controllers/rsvpController");
+const { submitRsvp } = require("../controllers/rsvpController");
 
 const router = express.Router({ mergeParams: true });
 
+/** Standalone RSVP submit route, nested under a group/event. */
 router.use(requireMembership);
 router.post("/", submitRsvp);
-router.get("/mine", getMyRsvp);    
 
 module.exports = router;

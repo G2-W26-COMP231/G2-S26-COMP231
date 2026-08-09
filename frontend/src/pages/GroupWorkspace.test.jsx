@@ -4,6 +4,10 @@ import { MemoryRouter } from "react-router-dom";
 import GroupWorkspace from "./GroupWorkspace";
 import client from "../api/client";
 
+/** 
+ * Tests the main functions of the GroupWorkspace page. 
+ * It checks loading, errors, and what organizers and members can see. 
+*/
 vi.mock("../api/client");
 
 function renderWorkspace() {

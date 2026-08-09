@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+/** Tracks admin actions (bans, deletes, etc) so there's a history log. */
 const adminLogSchema = new mongoose.Schema(
   {
     adminId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },

@@ -1,3 +1,5 @@
+/** Tests for sendMessage, persistAndBroadcast, and the chat socket's membership check. */
+
 const test = require("node:test");
 const assert = require("node:assert");
 const { sendMessage, getMessageHistory, persistAndBroadcast } = require("../controllers/messageController");

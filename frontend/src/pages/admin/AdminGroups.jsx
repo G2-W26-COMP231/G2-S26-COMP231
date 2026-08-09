@@ -4,6 +4,7 @@ import client from "../../api/client";
 import AdminTabs from "./AdminTabs";
 import Modal from "../../components/Modal";
 
+/** Admin's list of every group in the system, with a View and Delete button on each. */
 export default function AdminGroups() {
   const [groups, setGroups] = useState(null);
   const [error, setError] = useState("");

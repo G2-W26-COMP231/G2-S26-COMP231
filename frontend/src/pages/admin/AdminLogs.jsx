@@ -11,6 +11,7 @@ const ACTION_LABELS = {
   remove_reported_message: "Removed reported message",
 };
 
+/** Shows the admin action log - who did what, and when, newest first. */
 export default function AdminLogs() {
   const [logs, setLogs] = useState(null);
   const [error, setError] = useState("");

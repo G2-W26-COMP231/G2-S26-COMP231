@@ -3,6 +3,10 @@ import { Link, useParams } from "react-router-dom";
 import client from "../api/client";
 import GroupTabs from "../components/GroupTabs";
 
+/** 
+ * Displays the main overview of the selected group. 
+ * It shows group information, upcoming events, and organizer options.
+*/
 export default function GroupWorkspace() {
   const { groupId } = useParams();
   const [data, setData] = useState(null);         

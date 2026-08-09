@@ -3,6 +3,15 @@ const Rsvp = require("../models/Rsvp");
 const asyncHandler = require("../utils/asyncHandler");
 const VALID_RESPONSES = ["going", "maybe", "cant_make_it"];
 
+/**
+ * Submits or updates a member's RSVP for an event. Uses upsert so it works
+ * whether or not they've already RSVP'd before - just overwrites it. Also
+ * fires a socket event so the organizer's RSVP list updates live without
+ * needing a refresh.
+ *
+ * @param {Object} req - req.params.eventId, req.body.response
+ * @param {Object} res
+ */
 const submitRsvp = asyncHandler(async (req, res) => {
   const { eventId } = req.params;
   const { response } = req.body;
@@ -30,6 +39,14 @@ const submitRsvp = asyncHandler(async (req, res) => {
   res.json({ rsvp });
 });
 
+/**
+ * Checks what the current user's RSVP status is for one event. Returns
+ * "no_response" as a default if they haven't RSVP'd yet instead of just
+ * returning nothing, so the frontend doesn't have to handle a null case.
+ *
+ * @param {Object} req - req.params.eventId
+ * @param {Object} res
+ */
 const getMyRsvp = asyncHandler(async (req, res) => {
   const { eventId } = req.params;
   const rsvp = await Rsvp.findOne({ eventId, userId: req.userId });

@@ -3,6 +3,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
+/** 
+ * Handles accepting a group invitation from a direct invite link. 
+ * After the invitation is accepted, the user is redirected to the group page. 
+*/
 export default function AcceptInvite() {
   const { token } = useParams();
   const { user, loading } = useAuth();

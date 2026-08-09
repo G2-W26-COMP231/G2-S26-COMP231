@@ -1,8 +1,16 @@
 const Message = require("../models/Message");
-const Report = require("../models/Report");
+const Report = require("../models/Report")
 const asyncHandler = require("../utils/asyncHandler");
 const { logAdminAction } = require("../utils/adminLog");
 
+/**
+ * Lets a group member report a message they think is inappropriate. Just
+ * makes a Report record pointing at the message, doesn't take any action
+ * on the message itself - an admin has to review it later.
+ *
+ * @param {Object} req - req.params.messageId, req.body.reason (optional)
+ * @param {Object} res
+ */
 const reportMessage = asyncHandler(async (req, res) => {
   const { messageId } = req.params;
   const { reason } = req.body;
@@ -19,6 +27,64 @@ const reportMessage = asyncHandler(async (req, res) => {
   res.status(201).json({ report });
 });
 
+/**
+ * Admin-only: lists reported messages so they can be reviewed. Can filter
+ * by status (open/dismissed/resolved) with a query param, otherwise
+ * returns everything.
+ *
+ * @param {Object} req - optional query.status filter
+ * @param {Object} res
+ */
+const listReports = asyncHandler(async (req, res) => {
+  const { status } = req.query;
+  const filter = {};
+  if (status && ["open", "dismissed", "resolved"].includes(status)) {
+    filter.status = status;
+  }
+  const reports = await Report.find(filter)
+    .sort({ createdAt: -1 })
+    .populate("reportedBy", "name email")
+    .populate("groupId", "name")
+    .populate({
+      path: "messageId",
+      select: "content senderId isRemoved sentAt",
+      populate: { path: "senderId", select: "name email" },
+    });
+  res.json({ reports });
+});
+
+/**
+ * Admin-only: dismisses a report with no further action, if the admin
+ * decides the message was actually fine.
+ *
+ * @param {Object} req - req.params.reportId
+ * @param {Object} res
+ */
+const dismissReport = asyncHandler(async (req, res) => {
+  const { reportId } = req.params;
+  const report = await Report.findById(reportId);
+  if (!report) {
+    return res.status(404).json({ error: "Report not found." });
+  }
+  report.status = "dismissed";
+  await report.save();
+  await logAdminAction({
+    adminId: req.userId,
+    action: "dismiss_report",
+    targetType: "report",
+    targetId: report._id,
+  });
+  res.json({ report });
+});
+
+/**
+ * Admin-only: actually removes the reported message (soft delete via
+ * isRemoved) and marks the report resolved. Also fires a socket event so
+ * anyone currently in that chat sees the message disappear live.
+ *
+ * @param {Object} req - req.params.reportId
+ * @param {Object} res
+ */
 const removeReportedMessage = asyncHandler(async (req, res) => {
   const { reportId } = req.params;
   const report = await Report.findById(reportId);
@@ -46,27 +112,4 @@ const removeReportedMessage = asyncHandler(async (req, res) => {
   }
   res.json({ message, report });
 });
-
-const listReports = asyncHandler(async (req, res) => {
-  const { status } = req.query;
-  const filter = {};
-
-  if (status && ["open", "dismissed", "resolved"].includes(status)) {
-    filter.status = status;
-  }
-
-  const reports = await Report.find(filter)
-    .sort({ createdAt: -1 })
-    .populate("reportedBy", "name email")
-    .populate("groupId", "name")
-    .populate({
-      path: "messageId",
-      select: "content senderId isRemoved sentAt",
-      populate: { path: "senderId", select: "name email" },
-    });
-
-  res.json({ reports });
-});
-
-
-module.exports = { reportMessage, listReports, removeReportedMessage };
+module.exports = { reportMessage, listReports, dismissReport, removeReportedMessage };

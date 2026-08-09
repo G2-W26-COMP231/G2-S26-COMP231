@@ -1,3 +1,4 @@
+/** Tests for reportMessage - just the "message doesn't exist" case. */
 const test = require("node:test");
 const assert = require("node:assert");
 const { reportMessage } = require("../controllers/reportController");

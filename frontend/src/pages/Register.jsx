@@ -2,6 +2,10 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+/**
+ * Displays the registration form for creating a new account.
+ * After registration is successful, the user is redirected to the dashboard.
+ */
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();

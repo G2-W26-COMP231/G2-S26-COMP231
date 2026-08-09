@@ -3,6 +3,12 @@ import client from "../../api/client";
 import AdminTabs from "./AdminTabs";
 import Modal from "../../components/Modal";
 
+/**
+ * Where admins review reported messages. Can filter by status (open/
+ * resolved/dismissed/all), see the actual reported message content, and
+ * either dismiss the report or remove the message - both go through a
+ * confirm modal since they can't be undone.
+ */
 export default function AdminReports() {
   const [reports, setReports] = useState(null);
   const [statusFilter, setStatusFilter] = useState("open");

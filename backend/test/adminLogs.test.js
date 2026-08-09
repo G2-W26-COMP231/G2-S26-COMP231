@@ -1,3 +1,4 @@
+/** Tests for getAdminLogs - checking sort order, populate, and the limit/cap logic. */
 const test = require("node:test");
 const assert = require("node:assert");
 const { getAdminLogs } = require("../controllers/adminController");

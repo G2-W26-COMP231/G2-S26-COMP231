@@ -1,3 +1,8 @@
+/**
+ * Standalone script to wipe and reseed the database with demo data.
+ * Run manually with `node seed.js`, separate from the auto-seed that
+ * happens on server startup if the DB is empty.
+ */
 require("dotenv").config();
 const mongoose = require("mongoose");
 const { seedDatabase } = require("./utils/seedData");

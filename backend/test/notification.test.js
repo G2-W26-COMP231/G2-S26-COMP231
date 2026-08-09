@@ -1,3 +1,4 @@
+/** Tests for getRecentMessages - the message bell's "latest per group, capped at 10" logic. */
 const test = require("node:test");
 const assert = require("node:assert");
 const { getRecentMessages } = require("../controllers/notificationController");

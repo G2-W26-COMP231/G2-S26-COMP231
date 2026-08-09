@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
 
+/** 
+ * Displays a form that allows the user to create a new group. 
+ * It checks the group name before sending the information to the server.
+*/
 export default function CreateGroup() {
   const navigate = useNavigate();
   const [name, setName] = useState("");

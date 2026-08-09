@@ -5,6 +5,10 @@ import GroupTabs from "../components/GroupTabs";
 import Modal from "../components/Modal";
 import { useAuth } from "../context/AuthContext";
 
+/**
+ * Displays all members that belong to the selected group.
+ * Organizers can remove members while regular members can leave the group.
+ */
 export default function Members() {
   const { groupId } = useParams();
   const { user } = useAuth();
@@ -47,26 +51,23 @@ export default function Members() {
   }
 
   async function handleLeave() {
-    setError("");
     setBusy(true);
     try {
       await client.post(`/groups/${groupId}/leave`);
-      setConfirmLeave(false);
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.error || "Could not leave this group.");
       setConfirmLeave(false);
-      } finally {
-    setBusy(false);
+      setBusy(false);
     }
   }
 
   return (
     <div className="content-area">
       <GroupTabs groupId={groupId} groupName={group?.name || "..."} memberCount={members.length || undefined} myRole={myRole} />
+
       <h2>Members</h2>
       {error && <p className="error-text">{error}</p>}
-      
       <div className="card">
         {members.length === 0 && !error && <p className="muted">Loading...</p>}
         {members.map((m) => (

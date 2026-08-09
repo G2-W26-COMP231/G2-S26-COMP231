@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import client from "../api/client";
 
+/** 
+ * Displays a form for creating a new group event. 
+ * The event information is sent to the server and saved to the selected group. 
+*/
 export default function CreateEvent() {
   const { groupId } = useParams();
   const navigate = useNavigate();

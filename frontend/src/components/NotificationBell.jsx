@@ -2,6 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
 
+/**
+ * The invitations bell in the top bar - shows two things: invites sent TO
+ * you (with accept/decline buttons), and responses to invites you sent
+ * out that you haven't seen yet. The "responses" part clears itself once
+ * you open the dropdown (marked seen on the backend, then wiped from
+ * state once you close it again).
+ */
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [invites, setInvites] = useState([]);

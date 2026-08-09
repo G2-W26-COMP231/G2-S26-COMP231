@@ -2,6 +2,16 @@ const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 const asyncHandler = require("../utils/asyncHandler");
 
+/**
+ * Handles new user signup.
+ * Checks that name/email/password were sent, makes sure password is at least
+ * 8 characters, and makes sure the email isn't already taken. If everything
+ * checks out, hashes the password and creates the user, then sends back a
+ * JWT so they're logged in right away.
+ *
+ * @param {Object} req - Express request, needs name, email, password in the body
+ * @param {Object} res - Express response
+ */
 const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
@@ -22,6 +32,14 @@ const register = asyncHandler(async (req, res) => {
   res.status(201).json({ user, token: generateToken(user) });
 });
 
+/**
+ * Logs an existing user in. Checks the email/password against what's in the
+ * database, and blocks the login if the account has been banned by an admin.
+ * Sends back a new JWT token on success.
+ *
+ * @param {Object} req - needs email and password in the body
+ * @param {Object} res
+ */
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -32,12 +50,21 @@ const login = asyncHandler(async (req, res) => {
   if (!user || !(await user.comparePassword(password))) {
     return res.status(401).json({ error: "Invalid email or password." });
   }
-  if (user.isBanned) {
+  if (user.status === "banned") {
     return res.status(403).json({ error: "This account has been deactivated." });
   }
 
   res.json({ user, token: generateToken(user) });
 });
+
+/**
+ * Just returns whoever is currently logged in. req.user gets set by the
+ * requireAuth middleware before this even runs, so we don't have to look
+ * anything up here.
+ *
+ * @param {Object} req
+ * @param {Object} res
+ */
 
 const me = asyncHandler(async (req, res) => {
   res.json({ user: req.user });

@@ -7,6 +7,7 @@ const router = express.Router({ mergeParams: true });
 
 router.use(requireMembership);
 
+/** Chat routes for a group - send, get history, and report a message. */
 router.post("/", sendMessage);
 router.get("/", getMessageHistory);
 router.post("/:messageId/report", reportMessage);

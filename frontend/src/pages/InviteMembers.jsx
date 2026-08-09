@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import client from "../api/client";
 
+/**
+ * Allows the organizer to invite new members using their email addresses.
+ * It also displays the invitations that are still pending.
+ */
 export default function InviteMembers() {
   const { groupId } = useParams();
   const navigate = useNavigate();

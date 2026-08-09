@@ -1,3 +1,4 @@
+/** Tests for createEvent, getUpcomingEvents, getEventRsvps, and the requireOrganizer middleware. */
 const test = require("node:test");
 const assert = require("node:assert");
 const { createEvent, getUpcomingEvents, getEventRsvps } = require("../controllers/eventController");

@@ -1,5 +1,6 @@
-
 const mongoose = require("mongoose");
+
+/** A chat message. isRemoved is a soft delete, used when admin removes a reported message. */
 const messageSchema = new mongoose.Schema({
   groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group", required: true },
   senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -7,5 +8,6 @@ const messageSchema = new mongoose.Schema({
   sentAt: { type: Date, default: Date.now },
   isRemoved: { type: Boolean, default: false },
 });
+
 messageSchema.index({ groupId: 1, sentAt: -1 });
 module.exports = mongoose.model("Message", messageSchema);

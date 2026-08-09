@@ -1,3 +1,4 @@
+/** Tests for the requireMembership middleware. */
 const test = require("node:test");
 const assert = require("node:assert");
 const requireMembership = require("../middleware/requireMembership");

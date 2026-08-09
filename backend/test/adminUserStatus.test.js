@@ -1,10 +1,8 @@
+/** Tests for setUserStatus - the ban/reactivate endpoint, including the admin log side effect. */
 const test = require("node:test");
 const assert = require("node:assert");
 const Module = require("node:module");
 
-// The admin action log (AdminLog model + logAdminAction util) is Table 33's
-// work and isn't in the repo yet. Stub both so this stays a real unit test:
-// the logger would otherwise hit the database.
 const loggedActions = [];
 const originalLoad = Module._load;
 Module._load = function (request) {

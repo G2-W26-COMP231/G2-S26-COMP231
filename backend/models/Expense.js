@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+/** One logged expense. amount is stored in cents to avoid rounding issues. */
 const expenseSchema = new mongoose.Schema(
   {
     groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group", required: true },

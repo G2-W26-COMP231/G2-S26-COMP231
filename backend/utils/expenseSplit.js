@@ -1,3 +1,16 @@
+/**
+ * Figures out how much each person owes for an expense, either split
+ * equally or with custom amounts. Everything's done in cents to avoid
+ * floating point rounding issues. For an equal split, any leftover cents
+ * (like $10 split 3 ways = $3.33 each with 1 cent left over) get handed
+ * out one at a time to the first few people instead of just getting lost.
+ *
+ * @param {number} amount - total amount in dollars
+ * @param {string[]} memberIds - who's included in the split
+ * @param {"equal"|"custom"} splitType
+ * @param {Object} [customShares] - required if splitType is "custom", maps memberId -> dollar amount
+ * @returns {{memberId: string, amountCents: number}[]}
+ */
 function buildShares(amount, memberIds, splitType, customShares) {
   if (!Array.isArray(memberIds) || memberIds.length === 0) {
     throw new Error("At least one member must be selected for the split.");
@@ -7,7 +20,6 @@ function buildShares(amount, memberIds, splitType, customShares) {
     throw new Error("Amount must be a positive number.");
   }
 
-  // ---- Task 15.2 (Milad) - equal split ----
   if (splitType === "equal") {
     const base = Math.floor(totalCents / memberIds.length);
     const remainder = totalCents - base * memberIds.length;
@@ -17,7 +29,6 @@ function buildShares(amount, memberIds, splitType, customShares) {
     }));
   }
 
-  // ---- Task 15.3 (Czarina) - custom split ----
   if (splitType === "custom") {
     if (!customShares || typeof customShares !== "object") {
       throw new Error("customShares is required for a custom split.");
@@ -38,53 +49,4 @@ function buildShares(amount, memberIds, splitType, customShares) {
   throw new Error(`Unknown splitType: ${splitType}`);
 }
 
-// ---- Task 17.1 (Hunee) - pairwise debt calc / balance netting ----
-function calculateNetBalances(expenses) {
-  const balances = {};
-  const touch = (id) => {
-    if (!(id in balances)) balances[id] = 0;
-  };
-
-  for (const expense of expenses) {
-    touch(expense.payerId);
-    for (const share of expense.shares) {
-      touch(share.memberId);
-      if (share.memberId === expense.payerId) {
-        continue;
-      }
-      balances[share.memberId] -= share.amountCents;
-      balances[expense.payerId] += share.amountCents;
-    }
-  }
-  return balances;
-}
-
-function simplifyDebts(balances) {
-  const creditors = [];
-  const debtors = [];
-  for (const [id, amount] of Object.entries(balances)) {
-    if (amount > 0) creditors.push({ id, amount });
-    else if (amount < 0) debtors.push({ id, amount: -amount });
-  }
-  creditors.sort((a, b) => b.amount - a.amount);
-  debtors.sort((a, b) => b.amount - a.amount);
-
-  const transactions = [];
-  let i = 0;
-  let j = 0;
-  while (i < debtors.length && j < creditors.length) {
-    const debtor = debtors[i];
-    const creditor = creditors[j];
-    const settled = Math.min(debtor.amount, creditor.amount);
-    if (settled > 0) {
-      transactions.push({ from: debtor.id, to: creditor.id, amountCents: settled });
-    }
-    debtor.amount -= settled;
-    creditor.amount -= settled;
-    if (debtor.amount === 0) i++;
-    if (creditor.amount === 0) j++;
-  }
-  return transactions;
-}
-
-module.exports = { buildShares, calculateNetBalances, simplifyDebts };
+module.exports = { buildShares };

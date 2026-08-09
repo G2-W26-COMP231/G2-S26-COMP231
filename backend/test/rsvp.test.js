@@ -1,3 +1,4 @@
+/** Tests for submitRsvp and getMyRsvp. */
 const test = require("node:test");
 const assert = require("node:assert");
 const { submitRsvp, getMyRsvp } = require("../controllers/rsvpController");
@@ -12,8 +13,6 @@ function mockRes() {
 }
 
 function mockApp() {
-  // submitRsvp calls req.app.get("io") - mock it so the emit doesn't crash
-  // when no real Socket.io server is running during tests
   return { get: () => null };
 }
 

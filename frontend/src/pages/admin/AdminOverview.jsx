@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import client from "../../api/client";
 import AdminTabs from "./AdminTabs";
+
+/**
+ * Admin dashboard homepage - quick stat cards (open/total reports, banned/
+ * total users, total groups) plus the 5 most recent open reports so an
+ * admin can jump straight into reviewing something.
+ */
 export default function AdminOverview() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");

@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+/** A user account. Password is never stored plain, only the bcrypt hash. */
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -12,10 +13,20 @@ const userSchema = new mongoose.Schema(
   { timestamps: true } 
 );
 
+/**
+ * Checks a typed-in password against the stored hash, used on login.
+ * @param {string} candidate
+ * @returns {Promise<boolean>}
+ */
 userSchema.methods.comparePassword = function (candidate) {
   return bcrypt.compare(candidate, this.passwordHash);
 };
 
+/**
+ * Hashes a password before saving, used on register.
+ * @param {string} plain
+ * @returns {Promise<string>}
+ */
 userSchema.statics.hashPassword = function (plain) {
   return bcrypt.hash(plain, 10);
 };

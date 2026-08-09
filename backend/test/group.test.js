@@ -1,3 +1,4 @@
+/** Tests for createGroup and getMyGroups. */
 const test = require("node:test");
 const assert = require("node:assert");
 const { createGroup, getMyGroups } = require("../controllers/groupController");

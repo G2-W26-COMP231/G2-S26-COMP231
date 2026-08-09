@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+/** A group event. isCancelled is a soft delete, we don't actually remove it. */
 const eventSchema = new mongoose.Schema(
   {
     groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group", required: true },
