@@ -5,6 +5,7 @@ const Event = require("../models/Events");
 const Message = require("../models/Message");
 const Expense = require("../models/Expense");
 const asyncHandler = require("../utils/asyncHandler");
+const { GROUP_NAME_MAX_LENGTH } = require("../utils/limits");
 
 /**
  * Creates a group and automatically makes whoever created it the organizer.
@@ -19,8 +20,8 @@ const createGroup = asyncHandler(async (req, res) => {
   if (!name || !name.trim()) {
     return res.status(400).json({ error: "Group name is required." });
   }
-  if (name.trim().length > 100) {
-    return res.status(400).json({ error: "Group name must be 100 characters or fewer." });
+  if (name.trim().length > GROUP_NAME_MAX_LENGTH) {
+    return res.status(400).json({ error: `Group name must be ${GROUP_NAME_MAX_LENGTH} characters or fewer.` });
   }
   const session = await mongoose.startSession();
   let group;

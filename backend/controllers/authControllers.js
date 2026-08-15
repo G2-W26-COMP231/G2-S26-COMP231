@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 const asyncHandler = require("../utils/asyncHandler");
+const { PASSWORD_MIN_LENGTH } = require("../utils/limits");
 
 /**
  * Handles new user signup.
@@ -17,8 +18,8 @@ const register = asyncHandler(async (req, res) => {
   if (!name || !email || !password) {
     return res.status(400).json({ error: "name, email, and password are required." });
   }
-  if (password.length < 8) {
-    return res.status(400).json({ error: "Password must be at least 8 characters." });
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return res.status(400).json({ error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.` });
   }
 
   const existing = await User.findOne({ email: email.toLowerCase() });

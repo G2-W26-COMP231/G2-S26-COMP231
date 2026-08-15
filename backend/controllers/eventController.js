@@ -2,6 +2,7 @@ const Event = require("../models/Events");
 const Rsvp = require("../models/Rsvp");
 const Membership = require("../models/Membership"); 
 const asyncHandler = require("../utils/asyncHandler"); 
+const { EVENT_TITLE_MAX_LENGTH, EVENT_LOCATION_MAX_LENGTH, EVENT_DESCRIPTION_MAX_LENGTH } = require("../utils/limits");
 
 /**
  * Organizer creates a new event for the group. Checks the date isn't in the
@@ -108,13 +109,11 @@ const editEvent = asyncHandler(async (req, res) => {
 
   if (title !== undefined) {
     if (!title.trim()) return res.status(400).json({ error: "title cannot be empty." });
-    if (title.trim().length > 150) return res.status(400).json({ error: "title must be 150 characters or fewer." });
-    event.title = title.trim();
+    if (title.trim().length > EVENT_TITLE_MAX_LENGTH) return res.status(400).json({ error: `title must be ${EVENT_TITLE_MAX_LENGTH} characters or fewer.` });    event.title = title.trim();
   }
   if (location !== undefined) {
     if (!location.trim()) return res.status(400).json({ error: "location cannot be empty." });
-    if (location.trim().length > 200) return res.status(400).json({ error: "location must be 200 characters or fewer." });
-    event.location = location.trim();
+    if (location.trim().length > EVENT_LOCATION_MAX_LENGTH) return res.status(400).json({ error: `location must be ${EVENT_LOCATION_MAX_LENGTH} characters or fewer.` });    event.location = location.trim();
   }
   let start = event.startTime;
   if (startTime !== undefined) {
@@ -139,8 +138,8 @@ const editEvent = asyncHandler(async (req, res) => {
     }
   }
   if (description !== undefined) {
-    if (description.length > 1000) {
-      return res.status(400).json({ error: "description must be 1000 characters or fewer." });
+     if (description.length > EVENT_DESCRIPTION_MAX_LENGTH) {
+      return res.status(400).json({ error: `description must be ${EVENT_DESCRIPTION_MAX_LENGTH} characters or fewer.` });
     }
     event.description = description;
   }

@@ -1,5 +1,6 @@
 const Message = require("../models/Message");
 const asyncHandler = require("../utils/asyncHandler");
+const { MESSAGE_MAX_LENGTH } = require("../utils/limits");
 
 /**
  * Shared helper that actually saves a message and sends it out over
@@ -21,8 +22,8 @@ async function persistAndBroadcast({ groupId, senderId, body, io }) {
     err.status = 400;
     throw err;
   }
-  if (trimmed.length > 2000) {
-    const err = new Error("Message is too long (2000 character limit).");
+  if (trimmed.length > MESSAGE_MAX_LENGTH) {
+    const err = new Error(`Message is too long (${MESSAGE_MAX_LENGTH} character limit).`);
     err.status = 400;
     throw err;
   }
