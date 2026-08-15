@@ -3,6 +3,7 @@ const test = require("node:test");
 const assert = require("node:assert");
 const { createEvent, getUpcomingEvents, getEventRsvps } = require("../controllers/eventController");
 const requireOrganizer = require("../middleware/requireOrganizer");
+const Event = require("../models/Events");
 
 function mockRes() {
   const res = {};
@@ -16,8 +17,8 @@ function mockRes() {
 test("createEvent rejects a date in the past", async () => {
   const req = {
     body: { title: "Trip", location: "Banff", startTime: "2020-01-01T00:00:00Z" },
-    groupId: "fake-group-id",
-    userId: "organizer-id",
+    groupId: "64a1f0000000000000000001",
+    userId: "64a1f0000000000000000002",
   };
   const res = mockRes();
   await createEvent(req, res, () => {});
@@ -28,18 +29,22 @@ test("createEvent rejects a date in the past", async () => {
 test("createEvent rejects a missing title", async () => {
   const req = {
     body: { location: "Banff", startTime: "2099-01-01T00:00:00Z" },
-    groupId: "fake-group-id",
-    userId: "organizer-id",
+    groupId: "64a1f0000000000000000001",
+    userId: "64a1f0000000000000000002",
   };
   const res = mockRes();
   await createEvent(req, res, () => {});
   assert.equal(res.statusCode, 400);
 });
 
-test("getEventRsvps returns 404 for an event that doesn't belong to this group", async () => {
+test("getEventRsvps returns 404 for an event that doesn't belong to this group", async (t) => {
+  const original = Event.findOne;
+  t.after(() => { Event.findOne = original; });
+  Event.findOne = async () => null;
+
   const req = {
-    params: { eventId: "an-event-not-in-this-group" },
-    groupId: "fake-group-id",
+    params: { eventId: "64a1f0000000000000000003" },
+    groupId: "64a1f0000000000000000001",
   };
   const res = mockRes();
   await getEventRsvps(req, res, () => {});
@@ -63,8 +68,12 @@ test("requireOrganizer allows an organizer through", async () => {
   assert.equal(nextCalled, true);
 });
 
-test("getUpcomingEvents returns events for the group", async () => {
-  const req = { groupId: "fake-group-id" };
+test("getUpcomingEvents returns events for the group", async (t) => {
+  const original = Event.find;
+  t.after(() => { Event.find = original; });
+  Event.find = () => ({ sort: async () => [] });
+
+  const req = { groupId: "64a1f0000000000000000001" };
   const res = mockRes();
   await getUpcomingEvents(req, res, () => {});
   assert.equal(res.statusCode, 200);

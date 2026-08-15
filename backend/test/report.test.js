@@ -2,6 +2,7 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const { reportMessage } = require("../controllers/reportController");
+const Message = require("../models/Message");
 
 function mockRes() {
   const res = {};
@@ -12,12 +13,16 @@ function mockRes() {
   return res;
 }
 
-test("reportMessage rejects an unknown messageId", async () => {
+test("reportMessage rejects an unknown messageId", async (t) => {
+  const original = Message.findOne;
+  t.after(() => { Message.findOne = original; });
+  Message.findOne = async () => null;
+
   const req = {
-    params: { messageId: "a-message-that-does-not-exist" },
+    params: { messageId: "64a1f0000000000000000006" },
     body: { reason: "spam" },
-    groupId: "fake-group-id",
-    userId: "member-id",
+    groupId: "64a1f0000000000000000001",
+    userId: "64a1f0000000000000000007",
   };
   const res = mockRes();
   await reportMessage(req, res, () => {});

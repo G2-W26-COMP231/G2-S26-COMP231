@@ -2,6 +2,7 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const { createGroup, getMyGroups } = require("../controllers/groupController");
+const Membership = require("../models/Membership");
 
 function mockRes() {
   const res = {};
@@ -35,9 +36,14 @@ test("createGroup rejects a name that's just whitespace", async () => {
   assert.equal(res.statusCode, 400);
 });
 
-test("getMyGroups requires a logged-in user", async () => {
+test("getMyGroups with no user returns an empty group list", async (t) => {
+  const original = Membership.find;
+  t.after(() => { Membership.find = original; });
+  Membership.find = () => ({ populate: async () => [] });
+
   const req = { userId: null };
   const res = mockRes();
   await getMyGroups(req, res, () => {});
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body.groups, []);
 });

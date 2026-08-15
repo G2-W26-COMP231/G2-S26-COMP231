@@ -2,6 +2,8 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const { submitRsvp, getMyRsvp } = require("../controllers/rsvpController");
+const Event = require("../models/Events");
+const Rsvp = require("../models/Rsvp");
 
 function mockRes() {
   const res = {};
@@ -18,10 +20,10 @@ function mockApp() {
 
 test("submitRsvp rejects an invalid response value", async () => {
   const req = {
-    params: { eventId: "fake-event-id" },
+    params: { eventId: "64a1f0000000000000000008" },
     body: { response: "not-a-real-status" },
-    groupId: "fake-group-id",
-    userId: "member-id",
+    groupId: "64a1f0000000000000000001",
+    userId: "64a1f0000000000000000007",
     app: mockApp(),
   };
   const res = mockRes();
@@ -32,10 +34,10 @@ test("submitRsvp rejects an invalid response value", async () => {
 
 test("submitRsvp rejects a missing response", async () => {
   const req = {
-    params: { eventId: "fake-event-id" },
+    params: { eventId: "64a1f0000000000000000008" },
     body: {},
-    groupId: "fake-group-id",
-    userId: "member-id",
+    groupId: "64a1f0000000000000000001",
+    userId: "64a1f0000000000000000007",
     app: mockApp(),
   };
   const res = mockRes();
@@ -43,12 +45,16 @@ test("submitRsvp rejects a missing response", async () => {
   assert.equal(res.statusCode, 400);
 });
 
-test("submitRsvp rejects an unknown event", async () => {
+test("submitRsvp rejects an unknown event", async (t) => {
+  const original = Event.findOne;
+  t.after(() => { Event.findOne = original; });
+  Event.findOne = async () => null;
+
   const req = {
-    params: { eventId: "an-event-that-does-not-exist" },
+    params: { eventId: "64a1f0000000000000000009" },
     body: { response: "going" },
-    groupId: "fake-group-id",
-    userId: "member-id",
+    groupId: "64a1f0000000000000000001",
+    userId: "64a1f0000000000000000007",
     app: mockApp(),
   };
   const res = mockRes();
@@ -57,10 +63,14 @@ test("submitRsvp rejects an unknown event", async () => {
   assert.match(res.body.error, /event not found/i);
 });
 
-test("getMyRsvp returns no_response when the user hasn't RSVP'd yet", async () => {
+test("getMyRsvp returns no_response when the user hasn't RSVP'd yet", async (t) => {
+  const original = Rsvp.findOne;
+  t.after(() => { Rsvp.findOne = original; });
+  Rsvp.findOne = async () => null;
+
   const req = {
-    params: { eventId: "an-event-with-no-rsvp-yet" },
-    userId: "member-id",
+    params: { eventId: "64a1f000000000000000000a" },
+    userId: "64a1f0000000000000000007",
   };
   const res = mockRes();
   await getMyRsvp(req, res, () => {});
