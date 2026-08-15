@@ -113,21 +113,45 @@ const removeUserFromGroup = asyncHandler(async (req, res) => {
 });
 
 /**
- * Admin-only: lists every group in the whole system, with a member count
- * attached to each one.
+ * Admin-only: lists groups in the system, with a member count attached to
+ * each one. Supports an optional case-insensitive name search and
+ * pagination, so the list stays usable once there are a lot of groups.
  *
- * @param {Object} req
+ * @param {Object} req - optional query.search, query.page, query.limit
  * @param {Object} res
  */
 const listGroups = asyncHandler(async (req, res) => {
-  const groups = await Group.find().populate("organizerId", "name email").sort({ createdAt: -1 });
+  const { search, page = 1, limit = 10 } = req.query;
+  const filter = {};
+  if (search && search.trim()) {
+    filter.name = new RegExp(search.trim(), "i");
+  }
+
+  const pageNum = Math.max(Number(page) || 1, 1);
+  const pageSize = Math.min(Math.max(Number(limit) || 10, 1), 100);
+
+  const [groups, total] = await Promise.all([
+    Group.find(filter)
+      .populate("organizerId", "name email")
+      .sort({ createdAt: -1 })
+      .skip((pageNum - 1) * pageSize)
+      .limit(pageSize),
+    Group.countDocuments(filter),
+  ]);
+
   const withCounts = await Promise.all(
     groups.map(async (g) => ({
       ...g.toObject(),
       memberCount: await Membership.countDocuments({ groupId: g._id }),
     }))
   );
-  res.json({ groups: withCounts });
+
+  res.json({
+    groups: withCounts,
+    total,
+    page: pageNum,
+    totalPages: Math.max(Math.ceil(total / pageSize), 1),
+  });
 });
 
 /**
@@ -266,15 +290,37 @@ const getModerationOverview = asyncHandler(async (req, res) => {
 
 /**
  * Admin-only: gets the activity log of everything admins have done (bans,
- * removals, deletions, etc), newest first. Capped at 200 even if someone
- * asks for a higher limit, just to be safe.
+ * removals, deletions, etc), newest first. Supports filtering by action
+ * type and/or a date range. Capped at 200 even if someone asks for a
+ * higher limit, just to be safe.
  *
- * @param {Object} req - optional query.limit
+ * @param {Object} req - optional query.limit, query.action, query.from, query.to
  * @param {Object} res
  */
 const getAdminLogs = asyncHandler(async (req, res) => {
-  const { limit = 50 } = req.query;
-  const logs = await AdminLog.find()
+  const { limit = 50, action, from, to } = req.query;
+  const filter = {};
+
+  if (action && action !== "all") {
+    filter.action = action;
+  }
+
+  if (from || to) {
+    filter.createdAt = {};
+    if (from) {
+      const fromDate = new Date(from);
+      if (!Number.isNaN(fromDate.getTime())) filter.createdAt.$gte = fromDate;
+    }
+    if (to) {
+      const toDate = new Date(to);
+      if (!Number.isNaN(toDate.getTime())) {
+        toDate.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = toDate;
+      }
+    }
+  }
+
+  const logs = await AdminLog.find(filter)
     .sort({ createdAt: -1 })
     .limit(Math.min(Number(limit) || 50, 200))
     .populate("adminId", "name email");

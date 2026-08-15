@@ -1,16 +1,18 @@
 const Invitation = require("../models/Invitation");
 const Membership = require("../models/Membership");
 const Group = require("../models/Group");
+const User = require("../models/User");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendInviteEmail } = require("../config/email");
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Organizer invites someone to the group by email. Checks the email is
- * actually valid, makes sure the person isn't already a member, and won't
- * make a duplicate invite if there's already a pending one for that email.
- * Sends the actual invite email through sendGrid (or just logs it if
- * that's not set up).
+ * actually valid, that it belongs to an existing CrewUp account, makes
+ * sure the person isn't already a member, and won't make a duplicate
+ * invite if there's already a pending one for that email. Sends the
+ * actual invite email through sendGrid (or just logs it if that's not
+ * set up).
  *
  * @param {Object} req - req.body.email
  * @param {Object} res
@@ -22,9 +24,13 @@ const inviteMember = asyncHandler(async (req, res) => {
   }
   const normalizedEmail = email.toLowerCase().trim();
 
-  const existingMember = await Membership.findOne({ groupId: req.groupId })
-    .populate({ path: "userId", match: { email: normalizedEmail } });
-  if (existingMember && existingMember.userId) {
+  const existingUser = await User.findOne({ email: normalizedEmail });
+  if (!existingUser) {
+    return res.status(400).json({ error: "No CrewUp account found with this email address." });
+  }
+
+  const alreadyMember = await Membership.findOne({ groupId: req.groupId, userId: existingUser._id });
+  if (alreadyMember) {
     return res.status(409).json({ error: "This person is already a member of the group." });
   }
 
