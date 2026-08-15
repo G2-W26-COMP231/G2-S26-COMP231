@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import client from "../api/client";
 
-/**
- * Allows the organizer to invite new members using their email addresses.
- * It also displays the invitations that are still pending.
- */
+/** Organizer's page to invite people by email and see who's still pending. */
 export default function InviteMembers() {
   const { groupId } = useParams();
   const navigate = useNavigate();
@@ -31,44 +28,55 @@ export default function InviteMembers() {
     setEmails((prev) => [...prev, ""]);
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setNote("");
-    const toSend = emails.map((e) => e.trim()).filter(Boolean);
-    if (toSend.length === 0) {
-      setError("Add at least one email address.");
-      return;
-    }
-    setBusy(true);
-    const failures = [];
-    let anyEmailSent = false;
-    let anyEmailNotSent = false;
-    for (const email of toSend) {
-      try {
-        const res = await client.post(`/groups/${groupId}/invitations`, { email });
-        if (res.data.emailSent) anyEmailSent = true;
-        else anyEmailNotSent = true;
-      } catch (err) {
-        failures.push(`${email}: ${err.response?.data?.error || "failed"}`);
+async function handleSubmit(e) {
+  e.preventDefault();
+  setError("");
+  setNote("");
+  const toSend = emails.map((e) => e.trim()).filter(Boolean);
+  if (toSend.length === 0) {
+    setError("Add at least one email address.");
+    return;
+  }
+  setBusy(true);
+  const failures = [];
+  let anyEmailSent = false;
+  let anyEmailNotSent = false;
+  const duplicateEmails = []; // NEW: tracks which specific emails were already invited
+
+  for (const email of toSend) {
+    try {
+      const res = await client.post(`/groups/${groupId}/invitations`, { email });
+      if (res.data.note === "Invitation already pending.") {
+        duplicateEmails.push(email);
+      } else if (res.data.emailSent) {
+        anyEmailSent = true;
+      } else {
+        anyEmailNotSent = true;
       }
-    }
-    setBusy(false);
-    loadPending();
-    setEmails([""]);
-    setMessage("");
-    if (failures.length > 0) {
-      setError(failures.join(" · "));
-    }
-    if (anyEmailSent && !anyEmailNotSent) {
-      setNote("Invite email sent.");
-    } else if (anyEmailNotSent) {
-      setNote(
-        "Invitation created, but the email wasn't sent (SendGrid isn't configured on the server yet - check the server console for the invite link)."
-      );
+    } catch (err) {
+      failures.push(`${email}: ${err.response?.data?.error || "failed"}`);
     }
   }
+  setBusy(false);
+  loadPending();
+  setEmails([""]);
+  setMessage("");
+  if (failures.length > 0) {
+    setError(failures.join(" · "));
+  }
 
+  const notes = [];
+  if (anyEmailSent) notes.push("Invite email sent.");
+  if (anyEmailNotSent) {
+    notes.push(
+      "Invitation created, but the email wasn't sent (SendGrid isn't configured on the server yet - check the server console for the invite link)."
+    );
+  }
+  if (duplicateEmails.length > 0) {
+    notes.push(`Already invited: ${duplicateEmails.join(", ")}.`);
+  }
+  if (notes.length > 0) setNote(notes.join(" "));
+}
   return (
     <div className="content-area" style={{ maxWidth: 520 }}>
       <h1>Invite Members</h1>
